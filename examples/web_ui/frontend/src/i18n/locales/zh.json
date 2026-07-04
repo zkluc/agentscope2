@@ -162,7 +162,9 @@
 	},
 	"session-menu": {
 		"rename": "重命名",
-		"delete": "删除"
+		"delete": "删除",
+		"exportJson": "导出 (JSON)",
+		"exportMd": "导出 (Markdown)"
 	},
 	"dialog-credential-create": {
 		"title": "添加凭证",

@@ -1,0 +1,3 @@
+@echo off
+node -e "const fs=require('fs');const msg=fs.readFileSync(require('path').join(process.cwd(),'.git/COMMIT_EDITMSG'),'utf-8').trim();const regex=/^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?:.+/;if(!regex.test(msg)){console.error('');console.error('====================================');console.error('ERROR: Commit message format invalid');console.error('====================================');console.error('');console.error('Expected type: feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert');console.error('Example: feat(auth): add login page');console.error('');console.error('Your message: '+msg);console.error('');process.exit(1);}"
+

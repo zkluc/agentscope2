@@ -16,7 +16,7 @@
 	"lint-staged": {
 		"frontend/**/*.{ts,tsx}": [
 			"prettier --write",
-			"cd frontend && pnpm eslint --fix"
+			"pnpm --filter frontend lint:fix"
 		],
 		"backend/**/*.{ts,js}": [
 			"prettier --write"
@@ -32,5 +32,6 @@
 		"husky": "^9.1.7",
 		"lint-staged": "^17.0.5",
 		"prettier": "^3.8.3"
-	}
+	},
+	"packageManager": "pnpm@8.15.4+sha1.c85a4305534f76d461407b59277b954bac97b5c4"
 }

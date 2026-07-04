@@ -1,0 +1,14 @@
+name: agnes-image-2.1-flash
+label: Agnes Image 2.1 Flash
+status: active
+
+input_types:
+  - text/plain
+
+output_types:
+  - image/jpeg
+  - image/png
+  - image/webp
+
+context_size: 128000
+output_size: 4096

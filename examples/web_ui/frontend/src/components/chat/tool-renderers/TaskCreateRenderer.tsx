@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- renderer constant is co-located with its inline component by design */
 import { useState } from 'react';
 
 import { CornerLine, ToolStateIcon } from './_shared';

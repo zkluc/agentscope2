@@ -5,17 +5,19 @@ from ._base import ChatModelBase
 from ._model_card import ModelCard
 from ._model_response import ChatResponse, StructuredResponse
 from ._model_usage import ChatUsage
+from ._agnes import AgnesChatModel
 from ._anthropic import AnthropicChatModel
 from ._dashscope import DashScopeChatModel
 from ._deepseek import DeepSeekChatModel
 from ._gemini import GeminiChatModel
+from ._moonshot import MoonshotChatModel
 from ._ollama import OllamaChatModel
 from ._openai_chat import OpenAIChatModel
-from ._xai import XAIChatModel
-from ._moonshot import MoonshotChatModel
 from ._openai_response import OpenAIResponseModel
+from ._xai import XAIChatModel
 
 __all__ = [
+    "AgnesChatModel",
     "ChatUsage",
     "ChatModelBase",
     "ChatResponse",
@@ -25,9 +27,9 @@ __all__ = [
     "DashScopeChatModel",
     "DeepSeekChatModel",
     "GeminiChatModel",
+    "MoonshotChatModel",
     "OllamaChatModel",
     "OpenAIChatModel",
-    "XAIChatModel",
-    "MoonshotChatModel",
     "OpenAIResponseModel",
+    "XAIChatModel",
 ]

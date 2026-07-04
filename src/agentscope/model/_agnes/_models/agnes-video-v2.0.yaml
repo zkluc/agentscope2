@@ -1,0 +1,17 @@
+name: agnes-video-v2.0
+label: Agnes Video V2.0
+status: active
+
+input_types:
+  - text/plain
+  - video/mp4
+  - video/mpeg
+  - video/quicktime
+  - video/avi
+  - video/webm
+
+output_types:
+  - text/plain
+
+context_size: 128000
+output_size: 32768

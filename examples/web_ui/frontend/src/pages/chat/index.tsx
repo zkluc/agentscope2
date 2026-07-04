@@ -1,6 +1,7 @@
 import {
 	BotMessageSquare,
 	CalendarClock,
+	Download,
 	Ellipsis,
 	MessageSquareDashed,
 	Pencil,
@@ -13,6 +14,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { ChatViewport } from './ChatViewport';
 import type { SessionRecord } from '@/api';
+import { sessionApi } from '@/api/session';
 import { AgentDialog } from '@/components/dialog/AgentDialog';
 import { DeleteDialog } from '@/components/dialog/DeleteDialog';
 import { EditAgentDialog } from '@/components/dialog/EditAgentDialog';
@@ -111,6 +113,7 @@ const ChatPageInner = () => {
 	const [renameSession, setRenameSession] = useState<SessionRecord | null>(null);
 	const [deleteSessionOpen, setDeleteSessionOpen] = useState(false);
 	const [sessionToDelete, setSessionToDelete] = useState<SessionRecord | null>(null);
+	const [menuSessionId, setMenuSessionId] = useState<string | null>(null);
 
 	const selectedAgent = agents.find((a) => a.id === urlAgentId) ?? null;
 	const currentView = sessions.find((v) => v.session.id === urlSessionId) ?? null;
@@ -197,6 +200,29 @@ const ChatPageInner = () => {
 	const handleRenameConfirm = async (name: string) => {
 		if (!renameSession) return;
 		await updateSession(renameSession.id, { name });
+	};
+
+	/**
+	 * Export a session as JSON or Markdown and trigger a file download.
+	 */
+	const handleExport = async (session: SessionRecord, format: 'json' | 'md') => {
+		try {
+			const res = await sessionApi.exportSession(session.id, effectiveAgentId!, format);
+			const disposition = res.headers.get('Content-Disposition') ?? '';
+			const match = disposition.match(/filename="?(.+?)"?$/);
+			const filename = match?.[1] ?? `session-${session.id}.${format}`;
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = filename;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch {
+			// Error toast is already shown by client.ts
+		}
 	};
 
 	return (
@@ -309,7 +335,13 @@ const ChatPageInner = () => {
 									{sessions.map((view) => {
 										const session = view.session;
 										return (
-											<SidebarMenuItem key={session.id}>
+											<SidebarMenuItem
+												key={session.id}
+												onContextMenu={(e) => {
+													e.preventDefault();
+													setMenuSessionId(session.id);
+												}}
+											>
 												<SidebarMenuButton
 													isActive={urlSessionId === session.id}
 													onClick={() => {
@@ -330,7 +362,14 @@ const ChatPageInner = () => {
 													</span>
 												</SidebarMenuButton>
 												<SidebarMenuAction showOnHover>
-													<DropdownMenu>
+													<DropdownMenu
+														open={menuSessionId === session.id}
+														onOpenChange={(open) => {
+															setMenuSessionId(
+																open ? session.id : null,
+															);
+														}}
+													>
 														<DropdownMenuTrigger asChild>
 															<Ellipsis />
 														</DropdownMenuTrigger>
@@ -346,6 +385,22 @@ const ChatPageInner = () => {
 															>
 																<Pencil />
 																{t('session-menu.rename')}
+															</DropdownMenuItem>
+															<DropdownMenuItem
+																onClick={() =>
+																	handleExport(session, 'json')
+																}
+															>
+																<Download />
+																{t('session-menu.exportJson')}
+															</DropdownMenuItem>
+															<DropdownMenuItem
+																onClick={() =>
+																	handleExport(session, 'md')
+																}
+															>
+																<Download />
+																{t('session-menu.exportMd')}
 															</DropdownMenuItem>
 															<DropdownMenuItem
 																variant="destructive"

@@ -38,7 +38,6 @@ export const ChatTourController = ({ agentsCount, sessionsCount, onEnsureSidebar
 		if (currentTour !== CHAT_TOUR_NAME) return;
 		if (currentStep === 0) startCountsRef.current.agents = agentsCount;
 		if (currentStep === 1) startCountsRef.current.sessions = sessionsCount;
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [currentStep, currentTour]);
 
 	// Step 0 → 1: agent created

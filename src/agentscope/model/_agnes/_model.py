@@ -1,0 +1,454 @@
+# -*- coding: utf-8 -*-
+"""The Agnes chat model implementation."""
+from collections import OrderedDict
+from datetime import datetime
+from typing import Literal, Any, AsyncGenerator, TYPE_CHECKING, List, Type
+
+from pydantic import BaseModel, Field
+
+from .._base import ChatModelBase, _TOOL_CHOICE_LITERAL_MODES
+from .._model_response import ChatResponse, StructuredResponse
+from .._model_usage import ChatUsage
+from ...credential import AgnesCredential
+from ...formatter import FormatterBase, OpenAIChatFormatter
+from ...message import Msg, ThinkingBlock, ToolCallBlock, TextBlock
+from ...tool import ToolChoice
+
+if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletion
+    from openai import AsyncStream
+else:
+    ChatCompletion = Any
+    AsyncStream = Any
+
+
+class AgnesChatModel(ChatModelBase):
+    """The Agnes AI chat model."""
+
+    class Parameters(BaseModel):
+        """The parameters for the Agnes chat model."""
+
+        max_tokens: int | None = Field(
+            default=None,
+            title="Max Tokens",
+            description="The maximum number of tokens for the LLM output.",
+            gt=0,
+        )
+
+        thinking_enable: bool = Field(
+            default=False,
+            title="Thinking",
+            description="Whether to enable reasoning for reasoning models.",
+        )
+
+        reasoning_effort: (
+            Literal["none", "minimal", "low", "medium", "high", "xhigh"] | None
+        ) = Field(
+            default=None,
+            title="Reasoning Effort",
+            description="Controls the depth of reasoning for reasoning models.",
+        )
+
+        temperature: float | None = Field(
+            default=None,
+            title="Temperature",
+            description="The temperature for the LLM output.",
+            ge=0,
+            le=2,
+        )
+
+        top_p: float | None = Field(
+            default=None,
+            title="Top P",
+            description="The top P value for the LLM output.",
+            gt=0,
+            le=1,
+        )
+
+        parallel_tool_calls: bool = Field(
+            default=True,
+            title="Parallel Tool Calls",
+            description="Whether to enable parallel tool calls.",
+        )
+
+    type: Literal["agnes_chat"] = "agnes_chat"
+    """The type of the chat model."""
+
+    def __init__(
+        self,
+        credential: AgnesCredential,
+        model: str,
+        parameters: "AgnesChatModel.Parameters | None" = None,
+        stream: bool = True,
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
+        context_size: int = 128000,
+        formatter: FormatterBase | None = None,
+        client_kwargs: dict[str, Any] | None = None,
+        extra_body: dict[str, Any] | None = None,
+    ) -> None:
+        """Initialize the Agnes chat model.
+
+        Args:
+            credential (`AgnesCredential`):
+                The Agnes credential used to authenticate API calls.
+            model (`str`):
+                The Agnes model name, e.g. ``agnes-2.0-flash``.
+            parameters (`AgnesChatModel.Parameters | None`, defaults to \
+            `None`):
+                The API parameters. When ``None``, the default parameters
+                will be used.
+            stream (`bool`, defaults to `True`):
+                Whether to enable streaming output.
+            max_retries (`int`, defaults to `3`):
+                The maximum number of retries for the API.
+            retry_delay (`float`, defaults to `1.0`):
+                Seconds to sleep between retry attempts.
+            context_size (`int`, defaults to `128000`):
+                The model context size used for context compression.
+            formatter (`FormatterBase | None`, defaults to `None`):
+                The formatter that converts ``Msg`` objects to the format
+                required by the API. When ``None``, an
+                ``OpenAIChatFormatter`` instance will be used.
+            client_kwargs (`dict[str, Any] | None`, defaults to `None`):
+                Extra keyword arguments forwarded to ``openai.AsyncClient``
+                (e.g. ``timeout``, ``default_headers``, ``http_client``).
+            extra_body (`dict[str, Any] | None`, defaults to `None`):
+                Additional request body fields forwarded to
+                OpenAI-compatible APIs.
+        """
+        super().__init__(
+            credential=credential,
+            model=model,
+            parameters=parameters or self.Parameters(),
+            stream=stream,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
+            context_size=context_size,
+        )
+        self.formatter = formatter or OpenAIChatFormatter()
+        self.client_kwargs = client_kwargs or {}
+        self.extra_body = dict(extra_body) if extra_body is not None else None
+
+    @classmethod
+    def _get_retryable_exceptions(cls) -> tuple[Type[Exception], ...]:
+        import openai
+
+        return (
+            openai.APIConnectionError,
+            openai.APITimeoutError,
+            openai.RateLimitError,
+            openai.InternalServerError,
+        )
+
+    async def _call_api(
+        self,
+        model_name: str,
+        messages: list[Msg],
+        tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
+        **generate_kwargs: Any,
+    ) -> ChatResponse | AsyncGenerator[ChatResponse, None]:
+        """Call the Agnes AI chat API (OpenAI-compatible).
+
+        Args:
+            model_name (`str`):
+                The model name to use for this call.
+            messages (`list`):
+                A list of message dicts with ``role`` and ``content`` keys.
+            tools (`list[dict]`, default `None`):
+                The tools JSON schemas.
+            tool_choice (`ToolChoice | None`, optional):
+                Controls which (if any) tool is called by the model.
+            **generate_kwargs (`Any`):
+                Extra keyword arguments forwarded to the API.
+
+        Returns:
+            `ChatResponse | AsyncGenerator[ChatResponse, None]`:
+                A ``ChatResponse`` when streaming is disabled, or an async
+                generator of ``ChatResponse`` objects when streaming is
+                enabled.
+        """
+        import openai
+
+        client = openai.AsyncClient(
+            **{
+                "api_key": self.credential.api_key.get_secret_value(),
+                "base_url": self.credential.base_url,
+                **self.client_kwargs,
+            },
+        )
+
+        formatted_messages = await self.formatter.format(messages)
+
+        kwargs: dict[str, Any] = {
+            "model": model_name,
+            "messages": formatted_messages,
+            "stream": self.stream,
+        }
+
+        if self.parameters.max_tokens is not None:
+            kwargs["max_tokens"] = self.parameters.max_tokens
+
+        if self.parameters.temperature is not None:
+            kwargs["temperature"] = self.parameters.temperature
+
+        if self.parameters.top_p is not None:
+            kwargs["top_p"] = self.parameters.top_p
+
+        kwargs["parallel_tool_calls"] = self.parameters.parallel_tool_calls
+
+        if self.parameters.thinking_enable:
+            kwargs.setdefault("extra_body", {})
+            kwargs["extra_body"].setdefault("thinking", {})
+            kwargs["extra_body"]["thinking"].setdefault(
+                "type",
+                "enabled",
+            )
+
+        if self.parameters.reasoning_effort is not None:
+            kwargs.setdefault("extra_body", {})
+            kwargs["extra_body"]["thinking"] = kwargs["extra_body"].get(
+                "thinking",
+                {},
+            )
+            kwargs["extra_body"]["thinking"]["effort"] = (
+                self.parameters.reasoning_effort
+            )
+
+        kwargs.update(generate_kwargs)
+
+        if self.extra_body:
+            kwargs.setdefault("extra_body", {}).update(self.extra_body)
+
+        fmt_tools, fmt_tool_choice = self._format_tools(tools, tool_choice)
+
+        if fmt_tools:
+            kwargs["tools"] = fmt_tools
+
+        if fmt_tool_choice is not None:
+            kwargs["tool_choice"] = fmt_tool_choice
+
+        if self.stream:
+            kwargs["stream_options"] = {"include_usage": True}
+
+        start_datetime = datetime.now()
+        response = await client.chat.completions.create(**kwargs)
+
+        if self.stream:
+            return self._parse_stream_response(start_datetime, response)
+
+        return self._parse_completion_response(start_datetime, response)
+
+    async def _parse_stream_response(
+        self,
+        start_datetime: datetime,
+        response: AsyncStream,
+    ) -> AsyncGenerator[ChatResponse, None]:
+        """Parse the Agnes streaming response.
+
+        Args:
+            start_datetime (`datetime`):
+                The start datetime of the response generation.
+            response (`AsyncStream`):
+                The OpenAI-compatible async stream object.
+
+        Yields:
+            `ChatResponse`:
+                Incremental ``ChatResponse`` objects with ``is_last=False``
+                followed by a final one with ``is_last=True``.
+        """
+        usage = None
+        response_id: str | None = None
+        acc_text = TextBlock(text="")
+        acc_thinking = ThinkingBlock(thinking="")
+        acc_tool_calls: OrderedDict = OrderedDict()
+
+        async with response as stream:
+            async for chunk in stream:
+                if chunk.usage:
+                    u = chunk.usage
+                    usage = ChatUsage(
+                        input_tokens=u.prompt_tokens,
+                        output_tokens=u.completion_tokens,
+                        time=(datetime.now() - start_datetime).total_seconds(),
+                    )
+
+                response_id = response_id or getattr(chunk, "id", None)
+
+                if not chunk.choices:
+                    continue
+
+                choice = chunk.choices[0]
+                delta = choice.delta
+
+                delta_thinking = (
+                    getattr(delta, "reasoning_content", None) or ""
+                )
+                if delta_thinking:
+                    acc_thinking.thinking += delta_thinking
+                    _thinking_kwargs: dict[str, Any] = {
+                        "content": [
+                            ThinkingBlock(
+                                id=acc_thinking.id,
+                                thinking=delta_thinking,
+                            ),
+                        ],
+                        "usage": usage,
+                        "is_last": False,
+                    }
+                    if response_id:
+                        _thinking_kwargs["id"] = response_id
+                    yield ChatResponse(**_thinking_kwargs)
+                    continue
+
+                delta_text = getattr(delta, "content", None) or ""
+                acc_text.text += delta_text
+
+                delta_tool_call_blocks: List[ToolCallBlock] = []
+                for tool_call in getattr(delta, "tool_calls", None) or []:
+                    idx = tool_call.index
+                    args = tool_call.function.arguments or ""
+                    if idx in acc_tool_calls:
+                        acc_tool_calls[idx]["input"] += args
+                    else:
+                        acc_tool_calls[idx] = {
+                            "id": tool_call.id,
+                            "name": tool_call.function.name,
+                            "input": args,
+                        }
+                    tc = acc_tool_calls[idx]
+                    delta_tool_call_blocks.append(
+                        ToolCallBlock(
+                            id=tc["id"],
+                            name=tc["name"],
+                            input=args,
+                        ),
+                    )
+
+                delta_contents: List[TextBlock | ToolCallBlock] = []
+                if delta_text:
+                    delta_contents.append(
+                        TextBlock(id=acc_text.id, text=delta_text),
+                    )
+                delta_contents.extend(delta_tool_call_blocks)
+
+                if delta_contents:
+                    _text_kwargs: dict[str, Any] = {
+                        "content": delta_contents,
+                        "usage": usage,
+                        "is_last": False,
+                    }
+                    if response_id:
+                        _text_kwargs["id"] = response_id
+                    yield ChatResponse(**_text_kwargs)
+
+        final_contents: List[ThinkingBlock | TextBlock | ToolCallBlock] = []
+        if acc_thinking.thinking:
+            final_contents.append(acc_thinking)
+        if acc_text.text:
+            final_contents.append(acc_text)
+        for tc in acc_tool_calls.values():
+            final_contents.append(
+                ToolCallBlock(id=tc["id"], name=tc["name"], input=tc["input"]),
+            )
+
+        _final_kwargs: dict[str, Any] = {
+            "content": final_contents,
+            "usage": usage,
+            "is_last": True,
+        }
+        if response_id:
+            _final_kwargs["id"] = response_id
+        yield ChatResponse(**_final_kwargs)
+
+    def _parse_completion_response(
+        self,
+        start_datetime: datetime,
+        response: ChatCompletion,
+    ) -> ChatResponse:
+        """Parse the Agnes non-streaming response.
+
+        Args:
+            start_datetime (`datetime`):
+                The start datetime of the response generation.
+            response (`ChatCompletion`):
+                The OpenAI-compatible chat completion object.
+
+        Returns:
+            `ChatResponse`:
+                A single ``ChatResponse`` with ``is_last=True``.
+        """
+        content_blocks: List[ThinkingBlock | TextBlock | ToolCallBlock] = []
+
+        if response.choices:
+            choice = response.choices[0]
+            reasoning = getattr(choice.message, "reasoning_content", None)
+            if reasoning:
+                content_blocks.append(ThinkingBlock(thinking=reasoning))
+
+            if choice.message.content:
+                content_blocks.append(TextBlock(text=choice.message.content))
+
+            for tool_call in choice.message.tool_calls or []:
+                content_blocks.append(
+                    ToolCallBlock(
+                        id=tool_call.id,
+                        name=tool_call.function.name,
+                        input=tool_call.function.arguments,
+                    ),
+                )
+
+        usage = None
+        if response.usage:
+            u = response.usage
+            usage = ChatUsage(
+                input_tokens=u.prompt_tokens,
+                output_tokens=u.completion_tokens,
+                time=(datetime.now() - start_datetime).total_seconds(),
+            )
+
+        resp_kwargs: dict[str, Any] = {
+            "content": content_blocks,
+            "is_last": True,
+            "usage": usage,
+        }
+        response_id = getattr(response, "id", None)
+        if response_id:
+            resp_kwargs["id"] = response_id
+
+        return ChatResponse(**resp_kwargs)
+
+    def _format_tools(
+        self,
+        tools: list[dict] | None,
+        tool_choice: ToolChoice | None,
+    ) -> tuple[list[dict] | None, str | dict | None]:
+        """Validate, filter, and format tools and tool_choice for the Agnes
+        API.
+
+        Args:
+            tools (`list[dict] | None`, optional):
+                The raw tool schemas.
+            tool_choice (`ToolChoice | None`, optional):
+                The tool choice configuration.
+
+        Returns:
+            `tuple[list[dict] | None, str | dict | None]`:
+                A tuple of (formatted_tools, formatted_tool_choice).
+        """
+        if tool_choice and tools:
+            self._validate_tool_choice(tool_choice, tools)
+            if tool_choice.tools:
+                allowed = set(tool_choice.tools)
+                tools = [t for t in tools if t["function"]["name"] in allowed]
+
+        if not tool_choice:
+            return tools, None
+
+        mode = tool_choice.mode
+
+        if mode not in _TOOL_CHOICE_LITERAL_MODES:
+            return tools, {"type": "function", "function": {"name": mode}}
+
+        return tools, mode

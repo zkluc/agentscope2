@@ -162,7 +162,9 @@
 	},
 	"session-menu": {
 		"rename": "Rename",
-		"delete": "Delete"
+		"delete": "Delete",
+		"exportJson": "Export (JSON)",
+		"exportMd": "Export (Markdown)"
 	},
 	"dialog-credential-create": {
 		"title": "Add credential",

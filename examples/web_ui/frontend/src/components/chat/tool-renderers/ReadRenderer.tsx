@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- renderer constant is co-located with its inline component by design */
 import type { ToolResultBlock } from '@agentscope-ai/agentscope/message';
 import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';

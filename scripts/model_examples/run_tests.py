@@ -192,6 +192,18 @@ ALL_PROVIDERS: list[Provider] = [
         ],
         description="Ollama local models (requires running server)",
     ),
+    Provider(
+        name="agnes",
+        env_var="AGNES_API_KEY",
+        file_prefix="agnes",
+        supported_tests=[
+            "call",
+            "multiagent",
+            "multimodal",
+            "multiagent_multimodal",
+        ],
+        description="Agnes AI models (OpenAI-compatible API)",
+    ),
 ]
 
 PROVIDER_MAP: dict[str, Provider] = {p.name: p for p in ALL_PROVIDERS}

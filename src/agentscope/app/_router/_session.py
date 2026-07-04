@@ -5,7 +5,7 @@ import json
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 
 from ..._utils._common import _generate_id
 from ..deps import (
@@ -36,7 +36,7 @@ from ..storage import (
     StorageBase,
     TeamRecord,
 )
-from ...message import ToolCallState
+from ...message import Msg, ToolCallState, TextBlock
 from ...event import CustomEvent
 
 
@@ -460,6 +460,132 @@ async def list_messages(
         is_running=await message_bus.is_locked(
             MessageBusKeys.session_lock(session_id),
         ),
+    )
+
+
+# ----------------------------------------------------------------------
+# Export: download session messages as JSON or Markdown
+# ----------------------------------------------------------------------
+
+
+def _msg_to_markdown(msg: Msg) -> str:
+    """Render a single message as a Markdown block."""
+    role_label = {
+        "user": "**User**",
+        "assistant": f"**{msg.name}**" if msg.name else "**Assistant**",
+        "system": "**System**",
+    }.get(msg.role, f"**{msg.role}**")
+
+    lines: list[str] = [
+        f"### {role_label}",
+        f"*{msg.created_at}*\n",
+    ]
+    for block in msg.content:
+        if isinstance(block, TextBlock):
+            lines.append(block.text)
+        elif block.type == "data":
+            src = block.source
+            if src.type == "url":
+                lines.append(f"![{block.name or 'attachment'}]({src.url})")
+            else:
+                lines.append(f"*[{block.name or 'attachment'}]*")
+        elif block.type == "tool_call":
+            lines.append(f"🔧 Tool call: `{block.name}`")
+            try:
+                parsed = json.loads(block.input)
+                lines.append(f"```json\n{json.dumps(parsed, indent=2)}\n```")
+            except json.JSONDecodeError:
+                lines.append(f"```\n{block.input}\n```")
+        elif block.type == "tool_result":
+            lines.append(f"🔧 Tool result ({block.name})")
+            out = block.output
+            if isinstance(out, str):
+                lines.append(out)
+            elif isinstance(out, list):
+                for item in out:
+                    if isinstance(item, TextBlock):
+                        lines.append(item.text)
+        elif block.type == "thinking":
+            lines.append(f"💭 *{block.thinking}*")
+    lines.append("")
+    if msg.usage:
+        lines.append(
+            f"> Tokens: {msg.usage.input_tokens} in / "
+            f"{msg.usage.output_tokens} out\n",
+        )
+    lines.append("---\n")
+    return "\n".join(lines)
+
+
+@session_router.get(
+    "/{session_id}/export",
+    summary="Export session messages as JSON or Markdown",
+)
+async def export_session(
+    session_id: str,
+    agent_id: str = Query(description="Agent the session belongs to."),
+    format: str = Query(
+        "md",
+        pattern="^(json|md)$",
+        description="Export format: 'json' or 'md'.",
+    ),
+    user_id: str = Depends(get_current_user_id),
+    storage: StorageBase = Depends(get_storage),
+) -> Response:
+    """Download all messages for a session.
+
+    Args:
+        session_id: The session to export.
+        agent_id: Agent the session belongs to.
+        format: Export format — ``json`` or ``md``.
+        user_id: Injected authenticated user ID.
+        storage: Injected storage backend.
+
+    Returns:
+        ``Response`` with the file content and proper ``Content-Disposition``.
+    """
+    existing = await storage.get_session(user_id, agent_id, session_id)
+    if existing is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session '{session_id}' not found.",
+        )
+
+    # Fetch all messages — use a large limit to cover typical sessions.
+    all_messages = await storage.list_messages(
+        user_id,
+        session_id,
+        offset=0,
+        limit=2000,
+    )
+
+    session_name = existing.config.name or session_id
+    safe_name = "".join(c if c.isalnum() or c in (" ", "-", "_") else "_" for c in session_name)
+
+    if format == "json":
+        data = [msg.model_dump(mode="json") for msg in all_messages]
+        body = json.dumps(data, indent=2, ensure_ascii=False)
+        return Response(
+            content=body,
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f'attachment; filename="{safe_name}.json"',
+                "Content-Length": str(len(body.encode("utf-8"))),
+            },
+        )
+
+    # Markdown export
+    header = f"# {session_name}\n\n"
+    if all_messages:
+        header += f"**{len(all_messages)} messages**\n\n---\n\n"
+    body = header + "\n".join(_msg_to_markdown(m) for m in all_messages)
+    return Response(
+        content=body,
+        media_type="text/markdown",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name}.md"',
+            "Content-Length": str(len(body.encode("utf-8"))),
+        },
     )
 
 

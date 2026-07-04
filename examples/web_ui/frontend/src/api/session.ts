@@ -48,6 +48,13 @@ export const sessionApi = {
 	 * @param signal - Optional abort signal to close the connection.
 	 * @returns An async generator yielding ``AgentEvent`` objects.
 	 */
+	/** Export session messages — triggers a file download. */
+	exportSession: (sessionId: string, agentId: string, format: 'json' | 'md') =>
+		client.stream(`/sessions/${sessionId}/export`, {
+			method: 'GET',
+			params: { agent_id: agentId, format },
+		}),
+
 	streamEvents: async function* (
 		sessionId: string,
 		agentId: string,
