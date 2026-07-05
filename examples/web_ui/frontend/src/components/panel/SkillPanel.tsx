@@ -118,8 +118,7 @@ export function SkillPanel({ skills, loading = false, onAdd, onRemove }: SkillPa
 				open={deleteOpen}
 				onOpenChange={setDeleteOpen}
 				title={t('common.deleteTitle', {
-					entity: t('dialog-mcp-delete.skillEntity'),
-					name: deleteTarget ?? '',
+					name: `${t('dialog-mcp-delete.skillEntity')} "${deleteTarget ?? ''}"`,
 				})}
 				description={t('dialog-mcp-delete.skillDescription')}
 				onConfirm={async () => {

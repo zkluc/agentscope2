@@ -490,10 +490,7 @@ export const CredentialPage = () => {
 						open={deleteOpen}
 						onOpenChange={setDeleteOpen}
 						title={t('common.deleteTitle', {
-							entity: t('credential.deleteEntity'),
-							name:
-								(selectedCredential.data.name as string | undefined) ??
-								selectedCredential.id,
+							name: `${t('credential.deleteEntity')} "${(selectedCredential.data.name as string | undefined) ?? selectedCredential.id}"`,
 						})}
 						description={t('common.deleteDescription')}
 						onConfirm={handleDelete}

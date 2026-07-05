@@ -1,4 +1,13 @@
 {
-  "skills_dir_mtime": 1783163555.8292532,
-  "skills": {}
+  "skills_dir_mtime": 1783174524.456097,
+  "skills": {
+    "find-skills": {
+      "hash": "deddc03b4b5f50755b97fcdb737a786676992ef7e9be614d2cd2c71e0320bebf",
+      "skill_name": "find-skills"
+    },
+    "grill-me": {
+      "hash": "9c71927d4f0fd32d815247b4ca1fc782d4c5f2f3c1d6d023d188d4a7e0299b21",
+      "skill_name": "grill-me"
+    }
+  }
 }

@@ -39,7 +39,7 @@
 		"worker": "Worker",
 		"time": "Time",
 		"yes": "Yes",
-		"deleteTitle": "Delete {{entity}} \"{{name}}\"?",
+		"deleteTitle": "Delete {{name}}?",
 		"deleteDescription": "This action cannot be undone."
 	},
 	"error": {

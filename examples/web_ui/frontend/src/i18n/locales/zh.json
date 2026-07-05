@@ -39,7 +39,7 @@
 		"worker": "成员",
 		"time": "时间",
 		"yes": "是",
-		"deleteTitle": "删除{{entity}} \"{{name}}\"？",
+		"deleteTitle": "删除 \"{{name}}\"？",
 		"deleteDescription": "此操作无法撤销。"
 	},
 	"error": {

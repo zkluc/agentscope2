@@ -133,8 +133,7 @@ export function McpPanel({ mcps, loading = false, onAdd, onRemove }: McpPanelPro
 				open={deleteOpen}
 				onOpenChange={setDeleteOpen}
 				title={t('common.deleteTitle', {
-					entity: t('dialog-mcp-delete.entity'),
-					name: deleteTarget ?? '',
+					name: `${t('dialog-mcp-delete.entity')} "${deleteTarget ?? ''}"`,
 				})}
 				description={t('common.deleteDescription')}
 				onConfirm={async () => {

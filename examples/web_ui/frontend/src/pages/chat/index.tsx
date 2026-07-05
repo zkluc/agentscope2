@@ -454,8 +454,7 @@ const ChatPageInner = () => {
 						open={deleteOpen}
 						onOpenChange={setDeleteOpen}
 						title={t('common.deleteTitle', {
-							entity: t('dialog-agent-delete.entity'),
-							name: selectedAgent.data.name,
+							name: `${t('dialog-agent-delete.entity')} "${selectedAgent.data.name}"`,
 						})}
 						description={t('common.deleteDescription')}
 						confirmLabel={t('dialog-agent-delete.confirm')}
@@ -476,8 +475,7 @@ const ChatPageInner = () => {
 				open={deleteSessionOpen}
 				onOpenChange={setDeleteSessionOpen}
 				title={t('common.deleteTitle', {
-					entity: t('dialog-session-delete.entity'),
-					name: sessionToDelete?.config.name || sessionToDelete?.id || '',
+					name: `${t('dialog-session-delete.entity')} "${sessionToDelete?.config.name || sessionToDelete?.id || ''}"`,
 				})}
 				description={t('common.deleteDescription')}
 				confirmLabel={t('dialog-session-delete.confirm')}
