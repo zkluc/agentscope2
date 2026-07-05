@@ -19,7 +19,10 @@ export const useUserStore = defineStore('user', () => {
 	function setSetupComplete(val: boolean) {
 		setupComplete.value = val;
 		if (val) {
-			localStorage.setItem('server_url', serverUrl.value);
+			const url = localStorage.getItem('server_url');
+			if (url) {
+				serverUrl.value = url;
+			}
 		}
 	}
 

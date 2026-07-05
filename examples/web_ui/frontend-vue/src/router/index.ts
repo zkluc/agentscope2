@@ -1,5 +1,6 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import AppLayout from '@/components/layout/AppLayout.vue';
+import type { RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
   {
