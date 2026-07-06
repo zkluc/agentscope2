@@ -367,7 +367,8 @@
                              "pathPlaceholder":  "/path/to/skill"
                          },
     "schedule":  {
-                     "calendar":  "Calendar",
+                      "subtitle":  "Set up recurring and one-time agent tasks",
+                      "calendar":  "Calendar",
                      "createSchedule":  {
                                             "description":  "Set up a recurring or one-time scheduled task for an agent.",
                                             "descriptionLabel":  "Description",
@@ -603,9 +604,10 @@
                   "description":  "The page you are looking for does not exist or has been moved."
               },
     "credential":  {
-                       "id":  "ID",
-                       "title":  "Credentials",
-                       "type":  "Type",
+                        "subtitle":  "Manage API keys and access credentials",
+                        "id":  "ID",
+                        "title":  "Credentials",
+                        "type":  "Type",
                        "deleteConfirm":  "Delete credential",
                        "deleteSuccess":  "Credential deleted",
                        "created":  "Created",

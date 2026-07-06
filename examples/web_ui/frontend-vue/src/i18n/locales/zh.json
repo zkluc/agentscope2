@@ -367,7 +367,8 @@
                              "pathPlaceholder":  "/path/to/skill"
                          },
     "schedule":  {
-                     "calendar":  "日历",
+                      "subtitle":  "设置定时和一次性 Agent 任务",
+                      "calendar":  "日历",
                      "createSchedule":  {
                                             "description":  "为 Agent 设置定时或一次性的计划任务。",
                                             "descriptionLabel":  "描述",
@@ -603,9 +604,10 @@
                   "description":  "您访问的页面不存在或已被移动。"
               },
     "credential":  {
-                       "id":  "ID",
-                       "title":  "凭据管理",
-                       "type":  "类型",
+                        "subtitle":  "管理 API 密钥和访问凭据",
+                        "id":  "ID",
+                        "title":  "凭据管理",
+                        "type":  "类型",
                        "deleteConfirm":  "删除凭据",
                        "deleteSuccess":  "凭据已删除",
                        "created":  "创建时间",

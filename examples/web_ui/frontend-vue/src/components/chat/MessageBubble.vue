@@ -2,10 +2,15 @@
   <div :class="['flex flex-col w-full max-w-full', isUser ? 'items-end' : 'items-start', 'mb-4']">
     <div
       v-if="showBody"
-      :class="['p-4 rounded-xl space-y-2 max-w-full', isUser ? 'w-fit bg-secondary' : 'w-full min-w-full']"
+      :class="[
+        'rounded-xl space-y-2 max-w-full overflow-hidden',
+        isUser
+          ? 'w-fit max-w-[75%] bg-primary/5 border border-primary/10'
+          : 'w-full min-w-full',
+      ]"
     >
       <template v-for="(block, i) in blocks" :key="i">
-        <div v-if="block.type === 'tool_call_group'" class="flex flex-col gap-y-4 text-muted-foreground">
+        <div v-if="block.type === 'tool_call_group'" class="flex flex-col gap-y-3 text-muted-foreground px-4 first:pt-4 last:pb-4">
           <ToolGroupRenderer :tool-name="block.toolName" :calls="block.calls" />
           <ConfirmCard
             v-if="block.askingCall"
@@ -16,24 +21,29 @@
             }"
           />
         </div>
-        <div v-else-if="block.type === 'text'" class="prose w-full min-w-full">
+        <div v-else-if="block.type === 'text'" class="prose w-full min-w-full px-4 first:pt-4 last:pb-4">
           <VueMarkdown :source="block.text" />
         </div>
-        <details v-else-if="block.type === 'thinking'" class="text-muted-foreground">
-          <summary class="cursor-pointer select-none">{{ t('messageBubble.thinking') }}</summary>
-          <p class="mt-1 whitespace-pre-wrap">{{ block.thinking }}</p>
+        <details v-else-if="block.type === 'thinking'" class="group text-muted-foreground px-4 first:pt-4 last:pb-4">
+          <summary class="flex items-center gap-2 cursor-pointer select-none text-xs font-medium tracking-wider uppercase text-muted-foreground/70 hover:text-foreground transition-colors">
+            <div class="h-px flex-1 bg-border" />
+            <ChevronDownIcon class="size-3 transition-transform group-open:rotate-180" />
+            {{ t('messageBubble.thinking') }}
+            <div class="h-px flex-1 bg-border" />
+          </summary>
+          <p class="mt-2 whitespace-pre-wrap text-xs leading-relaxed rounded-lg bg-muted/50 p-3">{{ block.thinking }}</p>
         </details>
         <img
           v-else-if="block.type === 'data' && dataTypeOf(block) === 'image'"
           :src="dataSrc(block)"
           :alt="block.name || 'Uploaded image'"
-          class="max-h-80 max-w-full rounded-lg object-contain"
+          class="max-h-80 max-w-full rounded-lg object-contain px-4 first:pt-4 last:pb-4"
         />
         <video
           v-else-if="block.type === 'data' && dataTypeOf(block) === 'video'"
           controls
           :src="dataSrc(block)"
-          class="max-h-80 max-w-full rounded-lg"
+          class="max-h-80 max-w-full rounded-lg px-4 first:pt-4 last:pb-4"
         />
         <FileAttachment
           v-else-if="block.type === 'data' && dataTypeOf(block) !== 'audio'"
@@ -41,17 +51,17 @@
           :href="dataSrc(block)"
           :media-type="block.source.media_type"
         />
-        <div v-else-if="block.type === 'hint'" class="max-w-full">
-          <div class="rounded-lg border p-2">
+        <div v-else-if="block.type === 'hint'" class="px-4 first:pt-4 last:pb-4 max-w-full">
+          <div class="rounded-lg border bg-muted/30 p-2">
             <ElButton class="group w-full" text @click="toggleHint(i)">
-              <component :is="hintIcon(block)" class="size-3.5" />
-              <span class="tracking-tight">{{ hintLabel(block) }}</span>
-              <span v-if="hintSublabel(block)" class="text-muted-foreground font-normal truncate max-w-[200px]">
+              <component :is="hintIcon(block)" class="size-3.5 mr-2" />
+              <span class="text-xs font-medium">{{ hintLabel(block) }}</span>
+              <span v-if="hintSublabel(block)" class="text-muted-foreground font-normal truncate max-w-[200px] ml-1">
                 {{ hintSublabel(block) }}
               </span>
-              <ChevronDownIcon :class="['ml-auto transition-transform', expandedHints[i] ? 'rotate-180' : '']" />
+              <ChevronDownIcon :class="['ml-auto size-3 transition-transform', expandedHints[i] ? 'rotate-180' : '']" />
             </ElButton>
-            <div v-if="expandedHints[i]" class="p-2.5 pt-0 max-w-full overflow-hidden break-all text-muted-foreground">
+            <div v-if="expandedHints[i]" class="p-2.5 pt-0 max-w-full overflow-hidden break-all text-muted-foreground text-xs">
               <template v-for="(inner, j) in hintItems(block)" :key="j">
                 <VueMarkdown v-if="inner.type === 'text'" :source="(inner as any).text" />
               </template>
@@ -60,16 +70,16 @@
         </div>
       </template>
     </div>
-    <div v-if="showFooter" class="flex flex-row items-center justify-start gap-x-2 text-muted-foreground px-2 w-full text-xs">
-      <ElTag :type="isRunning ? 'warning' : 'success'" size="small" effect="plain">
-        <Loader2 v-if="isRunning" class="animate-spin mr-1" />
-        <CheckCircle v-else class="mr-1" />
-        <span class="tabular-nums tracking-tighter">{{ elapsedText }}</span>
-      </ElTag>
-      <span v-if="hasUsage" class="flex items-center gap-1 tabular-nums">
-        <ArrowUp class="size-3" />
+    <div v-if="showFooter" class="flex flex-row items-center gap-2 text-muted-foreground px-1 w-full text-[11px] mt-1.5">
+      <span class="inline-flex items-center gap-1 rounded-md bg-muted/50 px-2 py-0.5 font-mono tabular-nums">
+        <Loader2 v-if="isRunning" class="size-3 animate-spin text-primary" />
+        <CheckCircle v-else class="size-3 text-secondary" />
+        {{ elapsedText }}
+      </span>
+      <span v-if="hasUsage" class="inline-flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-0.5 font-mono tabular-nums">
+        <ArrowUp class="size-2.5" />
         {{ formatNumber((message.usage as any)?.input_tokens ?? 0) }}
-        <ArrowDown class="size-3 ml-1" />
+        <ArrowDown class="size-2.5" />
         {{ formatNumber((message.usage as any)?.output_tokens ?? 0) }}
       </span>
     </div>

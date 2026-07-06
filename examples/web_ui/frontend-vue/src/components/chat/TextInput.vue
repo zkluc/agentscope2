@@ -2,69 +2,72 @@
   <div
     id="tour-chat-input"
     data-tour="chat-input"
-    :class="['flex flex-col gap-2 rounded-2xl border bg-background p-3', className]"
+    :class="[
+      'flex flex-col gap-2 rounded-2xl border bg-card shadow-xs transition-shadow duration-150',
+      isFocused ? 'shadow-sm ring-1 ring-primary/20' : '',
+      className,
+    ]"
   >
-    <div v-if="files.length > 0" class="flex flex-wrap gap-2">
-      <div
-        v-for="(file, index) in files"
-        :key="index"
-        class="flex items-center gap-1 rounded bg-muted px-2 py-1 text-sm"
-      >
-        <Loader2 v-if="file.status === 'processing'" class="h-3 w-3 shrink-0 animate-spin text-muted-foreground/70" />
-        <span class="max-w-[200px] truncate">{{ file.name }}</span>
-        <button
-          class="text-muted-foreground hover:text-foreground"
-          @click="files.splice(index, 1)"
+    <div class="p-3 pb-0">
+      <div v-if="files.length > 0" class="flex flex-wrap gap-2 mb-2">
+        <div
+          v-for="(file, index) in files"
+          :key="index"
+          class="flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1.5 text-xs"
         >
-          <X class="h-3 w-3" />
-        </button>
+          <Loader2 v-if="file.status === 'processing'" class="h-3 w-3 shrink-0 animate-spin text-primary" />
+          <span class="max-w-[180px] truncate text-foreground/80">{{ file.name }}</span>
+          <button
+            class="text-muted-foreground hover:text-foreground transition-colors"
+            @click="files.splice(index, 1)"
+          >
+            <X class="h-3 w-3" />
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="relative">
-      <div class="relative">
-        <textarea
-          ref="textareaRef"
-          v-model="text"
-          :placeholder="placeholderText"
-          :disabled="disabled"
-          rows="1"
-          class="w-full resize-none rounded-md border-0 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          :style="{ maxHeight: 'calc(1.5em * 6)', lineHeight: '1.5em', overflowY: 'auto' }"
-          @keydown="handleKeyDown"
-          @focus="isFocused = true"
-          @blur="isFocused = false"
-        />
+    <div class="relative px-3 pb-3">
+      <textarea
+        ref="textareaRef"
+        v-model="text"
+        :placeholder="placeholderText"
+        :disabled="disabled"
+        rows="1"
+        class="w-full resize-none rounded-lg border-0 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-muted-foreground/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        :style="{ maxHeight: 'calc(1.5em * 6)', lineHeight: '1.5em', overflowY: 'auto' }"
+        @keydown="handleKeyDown"
+        @focus="isFocused = true"
+        @blur="isFocused = false"
+      />
 
-        <div
-          v-if="suggestion && isFocused"
-          class="pointer-events-none absolute left-0 top-0 px-3 py-2 text-sm"
-          style="line-height: 1.5em; white-space: pre-wrap; word-wrap: break-word;"
-        >
-          <span class="invisible">{{ text }}</span>
-          <span class="text-muted-foreground">{{ suggestion }}</span>
-          <span class="ml-2 text-xs text-muted-foreground/60">
-            Tab
-            {{ t('textInput.toComplete') }}
-          </span>
-        </div>
+      <div
+        v-if="suggestion && isFocused"
+        class="pointer-events-none absolute left-0 top-0 px-3 py-2.5 text-sm"
+        style="line-height: 1.5em; white-space: pre-wrap; word-wrap: break-word;"
+      >
+        <span class="invisible">{{ text }}</span>
+        <span class="text-muted-foreground/40">{{ suggestion }}</span>
+        <span class="ml-2 text-[10px] text-muted-foreground/30">
+          Tab
+          {{ t('textInput.toComplete') }}
+        </span>
       </div>
 
       <div class="mt-2 flex items-center justify-between">
         <div>
-          <span :class="['text-muted-foreground text-sm', !isFocused && 'hidden']">
+          <span :class="['text-[11px] text-muted-foreground/50', !isFocused && 'hidden']">
             {{ isMac() ? '⇧' : 'Shift' }} + Enter {{ t('textInput.newLine') }}
           </span>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-1.5">
           <ElTooltip :content="attachDisabled && allowedInputTypes?.length === 0 ? t('textInput.attachNotSupported') : t('textInput.attach')" placement="top">
             <ElButton
-              type=""
               :disabled="attachDisabled"
-              class="shrink-0 rounded-full"
+              class="shrink-0 rounded-full size-8"
               @click="fileInputRef?.click()"
             >
-              <Paperclip class="h-4 w-4" />
+              <Paperclip class="size-3.5" />
             </ElButton>
           </ElTooltip>
 
@@ -72,10 +75,10 @@
             <ElButton
               type="primary"
               :disabled="disabled || !text.trim() || hasProcessing"
-              class="shrink-0 rounded-full"
+              class="shrink-0 rounded-full size-8"
               @click="handleSend"
             >
-              <Send class="h-4 w-4" />
+              <Send class="size-3.5" />
             </ElButton>
           </ElTooltip>
 
@@ -97,6 +100,7 @@
 import { ref, computed } from 'vue';
 import type { ContentBlock, TextBlock } from '@agentscope-ai/agentscope/message';
 import { Paperclip, Send, Loader2, X } from 'lucide-vue-next';
+import { ElTooltip, ElButton } from 'element-plus';
 import { useTranslation } from '@/i18n/useI18n';
 import { isMac } from '@/utils/platform';
 

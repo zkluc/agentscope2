@@ -1,8 +1,8 @@
 <template>
-  <div v-if="toolCalls.length > 0" class="ring ring-border rounded-xl w-full p-3 space-y-3 bg-secondary/30">
-    <div class="flex items-center gap-2 text-sm font-medium text-secondary-foreground">
-      <Users class="size-4 shrink-0" />
-      <span>{{ t('chat.subagentConfirmTitle', { name: entry.worker_agent_name }) }}</span>
+  <div v-if="toolCalls.length > 0" class="rounded-xl border bg-card shadow-xs p-3 space-y-3">
+    <div class="flex items-center gap-2 px-1 text-sm">
+      <Users class="size-4 text-primary" />
+      <span class="text-xs font-medium text-foreground">{{ t('chat.subagentConfirmTitle', { name: entry.worker_agent_name }) }}</span>
     </div>
     <div class="space-y-2">
       <ConfirmCard

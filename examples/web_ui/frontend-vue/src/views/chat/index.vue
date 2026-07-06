@@ -1,9 +1,9 @@
 <template>
   <div class="flex h-full w-full">
-    <div class="w-64 border-r bg-background flex flex-col shrink-0">
+    <div class="w-64 border-r bg-sidebar flex flex-col shrink-0">
       <div class="p-3 border-b">
-        <div class="text-xs text-muted-foreground mb-2">{{ serverUrl }}</div>
-        <div class="flex items-center gap-2">
+        <div class="text-[10px] text-muted-foreground mb-2 truncate font-mono">{{ serverUrl }}</div>
+        <div class="flex items-center gap-1.5">
           <ElSelect
             id="tour-llm-select"
             :model-value="urlAgentId ?? ''"
@@ -20,52 +20,58 @@
             />
           </ElSelect>
           <ElTooltip :content="t('chat.agent.create')">
-            <ElButton id="tour-create-agent" size="small" @click="agentCreateOpen = true">
-              <Plus class="size-4" />
+            <ElButton id="tour-create-agent" size="small" class="px-1.5">
+              <Plus class="size-3.5" />
             </ElButton>
           </ElTooltip>
           <ElTooltip :content="t('chat.agent.edit')">
-            <ElButton size="small" :disabled="!urlAgentId" @click="editOpen = true">
-              <Settings2 class="size-4" />
+            <ElButton size="small" class="px-1.5" :disabled="!urlAgentId" @click="editOpen = true">
+              <Settings2 class="size-3.5" />
             </ElButton>
           </ElTooltip>
           <ElTooltip :content="t('chat.agent.delete')">
-            <ElButton size="small" :disabled="!urlAgentId" @click="deleteOpen = true">
-              <Trash2 class="size-4 text-destructive" />
+            <ElButton size="small" class="px-1.5" :disabled="!urlAgentId" @click="deleteOpen = true">
+              <Trash2 class="size-3.5 text-destructive" />
             </ElButton>
           </ElTooltip>
         </div>
       </div>
+
       <div class="flex-1 overflow-auto p-3">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-medium text-muted-foreground">{{ t('chat.session.label') }}</span>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-muted-foreground uppercase tracking-wider">{{ t('chat.session.label') }}</span>
           <ElButton id="tour-create-session" size="small" type="primary" :disabled="!urlAgentId" @click="handleCreateSession">
-            <Plus class="size-3" />
+            <Plus class="size-3.5" />
           </ElButton>
         </div>
-        <div v-if="sessions.length === 0" class="text-center py-8">
-          <ElIcon :size="32" class="text-muted-foreground mb-2">
-            <MessageSquare />
-          </ElIcon>
-          <p class="text-sm text-muted-foreground">
+
+        <div v-if="sessions.length === 0" class="flex flex-col items-center py-10 text-center">
+          <div class="size-10 rounded-full bg-muted flex items-center justify-center mb-3">
+            <MessageSquare class="size-5 text-muted-foreground" />
+          </div>
+          <p class="text-xs text-muted-foreground">
             {{ urlAgentId ? t('chat.session.emptyHasAgent') : t('chat.session.emptyNoAgent') }}
           </p>
-          <ElButton size="small" class="mt-2" :disabled="!urlAgentId" @click="handleCreateSession">
+          <ElButton size="small" class="mt-3" :disabled="!urlAgentId" @click="handleCreateSession">
             {{ t('chat.session.create') }}
           </ElButton>
         </div>
-        <div v-else class="space-y-1">
+
+        <div v-else class="space-y-0.5">
           <div
             v-for="view in sessions"
             :key="(view.session as any).id"
-            :class="['flex items-center gap-2 p-2 rounded text-sm cursor-pointer hover:bg-muted group', urlSessionId === (view.session as any).id ? 'bg-muted' : '']"
+            class="group flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm cursor-pointer transition-all duration-100"
+            :class="urlSessionId === (view.session as any).id
+              ? 'bg-primary/10 text-primary'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'"
             @click="navigate(`/chat/${urlAgentId}/${(view.session as any).id}`)"
           >
-            <CalendarClock v-if="(view.session as any).source === 'schedule'" class="size-4 shrink-0 text-muted-foreground" />
-            <BotMessageSquare v-else class="size-4 shrink-0 text-muted-foreground" />
-            <span class="truncate flex-1">{{ (view.session as any).config?.name || (view.session as any).id }}</span>
+            <CalendarClock v-if="(view.session as any).source === 'schedule'" class="size-3.5 shrink-0 text-muted-foreground" />
+            <BotMessageSquare v-else class="size-3.5 shrink-0 text-muted-foreground" />
+            <span class="truncate flex-1 text-xs">{{ (view.session as any).config?.name || (view.session as any).id }}</span>
             <ElDropdown trigger="click" @command="(cmd: string) => handleSessionAction(cmd, view.session as any)">
-              <ElButton size="small" text class="opacity-0 group-hover:opacity-100">
+              <ElButton size="small" text class="opacity-0 group-hover:opacity-100 h-6 w-6 p-0">
                 <Ellipsis class="size-3" />
               </ElButton>
               <template #dropdown>
@@ -100,7 +106,6 @@
       <ChatViewport
         :agent-id="effectiveAgentId"
         :session-id="effectiveSessionId"
-
         :on-team-updated="refetchSessions"
       />
     </div>
@@ -119,7 +124,7 @@
     />
 
     <ElDialog v-model="deleteOpen" :title="deleteDialogTitle" :width="400">
-      <p>{{ t('common.deleteDescription') }}</p>
+      <p class="text-sm text-muted-foreground">{{ t('common.deleteDescription') }}</p>
       <template #footer>
         <ElButton @click="deleteOpen = false">{{ t('common.cancel') }}</ElButton>
         <ElButton type="danger" @click="handleDeleteAgent">{{ t('dialog-agent-delete.confirm') }}</ElButton>
@@ -134,7 +139,7 @@
     />
 
     <ElDialog v-model="deleteSessionOpen" :title="deleteSessionDialogTitle" :width="400">
-      <p>{{ t('common.deleteDescription') }}</p>
+      <p class="text-sm text-muted-foreground">{{ t('common.deleteDescription') }}</p>
       <template #footer>
         <ElButton @click="deleteSessionOpen = false">{{ t('common.cancel') }}</ElButton>
         <ElButton type="danger" @click="handleDeleteSessionConfirm">{{ t('dialog-session-delete.confirm') }}</ElButton>

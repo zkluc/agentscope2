@@ -1,10 +1,10 @@
 <template>
-	<div class="flex h-full w-full">
-		<AppSidebar />
-		<main class="flex-1 overflow-auto">
-			<router-view />
-		</main>
-	</div>
+  <div class="flex h-full w-full">
+    <AppSidebar />
+    <main class="flex-1 overflow-hidden flex flex-col">
+      <router-view />
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">

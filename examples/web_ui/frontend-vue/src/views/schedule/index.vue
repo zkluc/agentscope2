@@ -1,54 +1,66 @@
 <template>
-  <div class="flex-1 overflow-auto p-6">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-xl font-semibold">{{ t('schedule.title') }}</h1>
-      <ElButton type="primary" @click="createOpen = true">
-        <Plus class="size-4 mr-1" /> {{ t('schedule.create') }}
-      </ElButton>
+  <div class="flex-1 overflow-auto">
+    <div class="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+      <div class="flex items-center justify-between px-6 py-4">
+        <div>
+          <h1 class="text-lg font-semibold text-foreground">{{ t('schedule.title') }}</h1>
+          <p class="text-xs text-muted-foreground mt-0.5">{{ t('schedule.subtitle') }}</p>
+        </div>
+        <ElButton type="primary" @click="createOpen = true">
+          <Plus class="size-4 mr-1.5" /> {{ t('schedule.create') }}
+        </ElButton>
+      </div>
     </div>
 
-    <ElTabs v-model="activeTab">
-      <ElTabPane :label="t('schedule.listView')" name="list">
-        <div v-if="loading" class="flex items-center justify-center h-32">
-          <span class="text-muted-foreground">{{ t('common.loading') }}</span>
-        </div>
-        <template v-else>
-          <div class="flex flex-row w-full pb-4">
-            <ElDatePicker
-              v-model="dateRange"
-              type="daterange"
-              :start-placeholder="t('schedule.startDate')"
-              :end-placeholder="t('schedule.endDate')"
-              size="small"
-              class="w-64"
-              @change="onDateRangeChange"
-            />
+    <div class="p-6">
+      <ElTabs v-model="activeTab" class="schedule-tabs">
+        <ElTabPane :label="t('schedule.listView')" name="list">
+          <div v-if="loading" class="flex items-center justify-center h-32">
+            <span class="text-muted-foreground text-sm">{{ t('common.loading') }}</span>
           </div>
-          <div v-if="filteredSchedules.length === 0" class="flex flex-col items-center py-16 text-muted-foreground">
-            <Calendar class="size-8 mb-2" />
-            <p>{{ t('schedule.noSchedules') }}</p>
-            <p class="text-xs">{{ t('schedule.noSchedulesDescription') }}</p>
-          </div>
-          <div v-else class="space-y-3">
-            <ScheduleCard
-              v-for="schedule in filteredSchedules"
-              :key="schedule.id"
-              :schedule="schedule"
-              @click="selectedSchedule = schedule; detailOpen = true"
-            />
-          </div>
-        </template>
-      </ElTabPane>
+          <template v-else>
+            <div class="flex items-center gap-3 pb-4">
+              <ElDatePicker
+                v-model="dateRange"
+                type="daterange"
+                :start-placeholder="t('schedule.startDate')"
+                :end-placeholder="t('schedule.endDate')"
+                size="small"
+                class="w-64"
+                @change="onDateRangeChange"
+              />
+            </div>
+            <div v-if="filteredSchedules.length === 0" class="flex flex-col items-center py-20 text-center">
+              <div class="size-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Calendar class="size-6 text-muted-foreground" />
+              </div>
+              <p class="text-sm text-muted-foreground">{{ t('schedule.noSchedules') }}</p>
+              <p class="text-xs text-muted-foreground mt-1">{{ t('schedule.noSchedulesDescription') }}</p>
+              <ElButton type="primary" class="mt-4" @click="createOpen = true">
+                <Plus class="size-4 mr-1.5" /> {{ t('schedule.create') }}
+              </ElButton>
+            </div>
+            <div v-else class="space-y-3">
+              <ScheduleCard
+                v-for="schedule in filteredSchedules"
+                :key="schedule.id"
+                :schedule="schedule"
+                @click="selectedSchedule = schedule; detailOpen = true"
+              />
+            </div>
+          </template>
+        </ElTabPane>
 
-      <ElTabPane :label="t('schedule.calendarView')" name="calendar">
-        <CalendarTabPage
-          :events="calendarEvents"
-          :current-date="calendarDate"
-          @month-change="calendarDate = $event"
-          @event-click="handleEventClick"
-        />
-      </ElTabPane>
-    </ElTabs>
+        <ElTabPane :label="t('schedule.calendarView')" name="calendar">
+          <CalendarTabPage
+            :events="calendarEvents"
+            :current-date="calendarDate"
+            @month-change="calendarDate = $event"
+            @event-click="handleEventClick"
+          />
+        </ElTabPane>
+      </ElTabs>
+    </div>
 
     <CreateScheduleDialog
       :open="createOpen"
@@ -186,3 +198,23 @@ async function handleDeleteSchedule(scheduleId: string) {
   }
 }
 </script>
+
+<style scoped>
+.schedule-tabs :deep(.el-tabs__header) {
+  margin-bottom: 1rem;
+}
+.schedule-tabs :deep(.el-tabs__item) {
+  font-size: 0.875rem;
+  padding: 0 1rem;
+}
+.schedule-tabs :deep(.el-tabs__active-bar) {
+  background-color: var(--primary);
+}
+.schedule-tabs :deep(.el-tabs__item:hover) {
+  color: var(--primary);
+}
+.schedule-tabs :deep(.el-tabs__item.is-active) {
+  color: var(--primary);
+  font-weight: 500;
+}
+</style>

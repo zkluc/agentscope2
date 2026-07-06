@@ -2,26 +2,26 @@
   <main class="flex size-full">
     <Splitpanes class="default-theme flex-1">
       <Pane :min-size="30" class="flex flex-1">
-        <div class="flex flex-col flex-1 min-h-0 min-w-0 overflow-x-hidden p-2">
-          <div class="flex flex-row gap-x-2 justify-between">
-          <div class="flex flex-row items-center gap-x-1">
-            <LlmSelect
-              :value="selectedModel"
-              :on-change="handleLlmChange"
-              :on-add-credential="() => credentialOpen = true"
-              :refetch-trigger="credentialRefetchTrigger"
-            />
-            <ModelParametersPopover
-              :selected-model="selectedModel"
-              :model-card="selectedModelCard"
-              :on-change="handleParametersChange"
-              :selected-fallback-model="selectedFallbackModel"
-              :on-fallback-change="handleFallbackChange"
-              :selectedTTSModel="selectedTTSModel"
-              :onTTSChange="handleTTSChange as any"
-            />
-          </div>
-            <div id="tour-permission-mode" class="flex flex-row gap-x-1">
+        <div class="flex flex-col flex-1 min-h-0 min-w-0 overflow-x-hidden">
+          <div class="flex items-center justify-between px-3 py-2 border-b bg-background/80 backdrop-blur-sm">
+            <div class="flex items-center gap-1.5">
+              <LlmSelect
+                :value="selectedModel"
+                :on-change="handleLlmChange"
+                :on-add-credential="() => credentialOpen = true"
+                :refetch-trigger="credentialRefetchTrigger"
+              />
+              <ModelParametersPopover
+                :selected-model="selectedModel"
+                :model-card="selectedModelCard"
+                :on-change="handleParametersChange"
+                :selected-fallback-model="selectedFallbackModel"
+                :on-fallback-change="handleFallbackChange"
+                :selectedTTSModel="selectedTTSModel"
+                :onTTSChange="handleTTSChange as any"
+              />
+            </div>
+            <div id="tour-permission-mode" class="flex items-center gap-1">
               <PermissionModeSelect
                 :value="selectedPermissionMode"
                 :disabled="!sessionId"
@@ -29,22 +29,22 @@
               />
               <ElDropdown trigger="click" @command="togglePanel">
                 <ElButton size="small" class="gap-1 px-2">
-                  <PanelRight class="size-4" />
+                  <PanelRight class="size-3.5" />
                   <ChevronDown class="size-3 text-muted-foreground" />
                 </ElButton>
                 <template #dropdown>
                   <ElDropdownMenu>
                     <ElDropdownItem command="plan">
-                      <ListTodo class="size-4" /> {{ t('panel.plan.title') }}
+                      <ListTodo class="size-3.5 mr-2" /> {{ t('panel.plan.title') }}
                     </ElDropdownItem>
                     <ElDropdownItem command="skill">
-                      <BookText class="size-4" /> {{ t('panel.skill.title') }}
+                      <BookText class="size-3.5 mr-2" /> {{ t('panel.skill.title') }}
                     </ElDropdownItem>
                     <ElDropdownItem command="permission">
-                      <ShieldCheck class="size-4" /> {{ t('panel.permission.title') }}
+                      <ShieldCheck class="size-3.5 mr-2" /> {{ t('panel.permission.title') }}
                     </ElDropdownItem>
                     <ElDropdownItem command="knowledge" divided>
-                      <Database class="size-4" /> {{ t('panel.knowledge.title') }}
+                      <Database class="size-3.5 mr-2" /> {{ t('panel.knowledge.title') }}
                     </ElDropdownItem>
                   </ElDropdownMenu>
                 </template>
@@ -77,15 +77,15 @@
         </div>
       </Pane>
       <Pane v-if="panelLayout.length > 0" :size="25" :min-size="15">
-        <div class="p-2 space-y-2">
+        <div class="h-full overflow-auto p-3">
           <div v-for="(col, colIdx) in panelLayout" :key="colIdx">
-            <div v-for="key in col" :key="key" class="rounded-lg border bg-background p-3 mb-2">
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2 text-sm font-medium">
-                  <ListTodo v-if="key === 'plan'" class="size-4" />
-                  <BookText v-if="key === 'skill'" class="size-4" />
-                  <ShieldCheck v-if="key === 'permission'" class="size-4" />
-                  <Database v-if="key === 'knowledge'" class="size-4" />
+            <div v-for="key in col" :key="key" class="rounded-xl border bg-card p-4 mb-3">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <ListTodo v-if="key === 'plan'" class="size-4 text-primary" />
+                  <BookText v-if="key === 'skill'" class="size-4 text-secondary" />
+                  <ShieldCheck v-if="key === 'permission'" class="size-4 text-primary" />
+                  <Database v-if="key === 'knowledge'" class="size-4 text-secondary" />
                   <span>{{ panelLabel(key) }}</span>
                 </div>
                 <ElButton size="small" circle @click="closePanel(key)">
@@ -319,7 +319,6 @@ function handleUserConfirm(toolCall: ToolCallBlock, confirm: boolean, replyId: s
 }
 
 function handleSubagentConfirm(entry: any, toolCall: any, confirm: boolean, rules?: any) {
-  // simplified - just confirm on the main session
   msgComposable.onUserConfirm(toolCall, confirm, entry.reply_id || entry.id, rules);
 }
 

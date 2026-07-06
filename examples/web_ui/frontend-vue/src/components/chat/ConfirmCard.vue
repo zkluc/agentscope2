@@ -1,57 +1,48 @@
 <template>
-  <div class="ring ring-border rounded-xl w-full p-4 space-y-4 text-sm overflow-hidden">
-    <div class="flex flex-col gap-y-2">
-      <strong class="text-secondary-foreground">{{ displayName }}</strong>
-      <div class="px-4 py-2 bg-white rounded-sm">
-        <code class="text-xs whitespace-pre-wrap break-all">{{ toolCall.input }}</code>
+  <div class="rounded-xl border bg-card shadow-xs p-4 space-y-3 text-sm">
+    <div class="flex items-start gap-3">
+      <div class="mt-0.5 size-6 rounded-md bg-primary/5 flex items-center justify-center shrink-0">
+        <Wrench class="size-3.5 text-primary" />
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-medium text-foreground text-xs">{{ displayName }}</div>
+        <div class="mt-1.5 rounded-lg bg-muted/50 p-2.5">
+          <code class="text-[11px] font-mono whitespace-pre-wrap break-all text-muted-foreground leading-relaxed">{{ toolCall.input }}</code>
+        </div>
       </div>
     </div>
-    <div class="flex flex-col">
-      <strong class="text-secondary-foreground mb-1">{{ t('chat.confirmToolCall') }}</strong>
-      <ElButton
-        :class="['flex justify-start cursor-pointer', selected === 'yes' ? 'text-primary' : 'text-muted-foreground']"
-        size="small"
-        text
-        @mouseenter="selected = 'yes'"
-        @click="handleConfirm(true)"
-      >
-        <ChevronRight :class="['size-4', selected === 'yes' ? 'visible' : 'invisible']" />
-        1. {{ t('common.yes') }}
-        <span :class="[selected === 'yes' ? 'text-muted-foreground' : 'invisible']">
-          ({{ t('confirmCard.toConfirm') }})
-        </span>
-      </ElButton>
-      <ElButton
-        v-if="hasSuggestedRules"
-        :class="['flex flex-wrap justify-start items-start cursor-pointer h-auto text-left', selected === 'yes_with_rule' ? 'text-primary' : 'text-muted-foreground']"
-        size="small"
-        text
-        @mouseenter="selected = 'yes_with_rule'"
-        @click="handleConfirm(true, [toolCall.suggested_rules![0]])"
-      >
-        <span class="flex items-start gap-1 w-full break-words whitespace-normal min-w-0">
-          <ChevronRight :class="['size-4 shrink-0 mt-0.5', selected === 'yes_with_rule' ? 'visible' : 'invisible']" />
-          <span class="break-words min-w-0">
-            2. {{ t('confirmCard.yesWithRule', { toolName: toolCall.suggested_rules![0].tool_name, ruleContent: toolCall.suggested_rules![0].rule_content }) }}
-            <span v-if="selected === 'yes_with_rule'" class="text-muted-foreground ml-1 whitespace-nowrap">
-              ({{ t('confirmCard.toConfirm') }})
-            </span>
-          </span>
-        </span>
-      </ElButton>
-      <ElButton
-        :class="['flex justify-start cursor-pointer', selected === 'no' ? 'text-primary' : 'text-muted-foreground']"
-        size="small"
-        text
-        @mouseenter="selected = 'no'"
-        @click="handleConfirm(false)"
-      >
-        <ChevronRight :class="['size-4', selected === 'no' ? 'visible' : 'invisible']" />
-        {{ hasSuggestedRules ? '3' : '2' }}. {{ t('common.no') }}
-        <span :class="[selected === 'no' ? 'text-muted-foreground' : 'invisible']">
-          ({{ t('confirmCard.toConfirm') }})
-        </span>
-      </ElButton>
+    <div class="border-t pt-2">
+      <p class="text-[11px] font-medium text-muted-foreground mb-2">{{ t('chat.confirmToolCall') }}</p>
+      <div class="space-y-1">
+        <button
+          class="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs transition-colors"
+          :class="selected === 'yes' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'"
+          @click="handleConfirm(true)"
+          @mouseenter="selected = 'yes'"
+        >
+          <ChevronRight class="size-3" :class="selected === 'yes' ? 'opacity-100' : 'opacity-0'" />
+          {{ t('common.yes') }}
+        </button>
+        <button
+          v-if="hasSuggestedRules"
+          class="flex items-start gap-2 w-full px-2 py-1.5 rounded-md text-xs text-left transition-colors"
+          :class="selected === 'yes_with_rule' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'"
+          @click="handleConfirm(true, [toolCall.suggested_rules![0]])"
+          @mouseenter="selected = 'yes_with_rule'"
+        >
+          <ChevronRight class="size-3 mt-0.5 shrink-0" :class="selected === 'yes_with_rule' ? 'opacity-100' : 'opacity-0'" />
+          <span class="leading-relaxed">{{ t('confirmCard.yesWithRule', { toolName: toolCall.suggested_rules![0].tool_name, ruleContent: toolCall.suggested_rules![0].rule_content }) }}</span>
+        </button>
+        <button
+          class="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs transition-colors"
+          :class="selected === 'no' ? 'bg-destructive/10 text-destructive' : 'text-muted-foreground hover:bg-muted'"
+          @click="handleConfirm(false)"
+          @mouseenter="selected = 'no'"
+        >
+          <ChevronRight class="size-3" :class="selected === 'no' ? 'opacity-100' : 'opacity-0'" />
+          {{ t('common.no') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -59,7 +50,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import type { ToolCallBlock } from '@agentscope-ai/agentscope/message';
-import { ChevronRight } from 'lucide-vue-next';
+import { ChevronRight, Wrench } from 'lucide-vue-next';
 import { useTranslation } from '@/i18n/useI18n';
 
 type SelectOption = 'yes' | 'yes_with_rule' | 'no';

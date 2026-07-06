@@ -1,52 +1,74 @@
 <template>
-  <div class="flex-1 overflow-auto p-6">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-xl font-semibold">{{ t('knowledge.title') }}</h1>
-      <ElButton type="primary" @click="showCreateDialog = true">
-        <Plus class="size-4 mr-1" /> {{ t('knowledge.create') }}
-      </ElButton>
+  <div class="flex-1 overflow-auto">
+    <div class="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+      <div class="flex items-center justify-between px-6 py-4">
+        <div>
+          <h1 class="text-lg font-semibold text-foreground">{{ t('knowledge.title') }}</h1>
+          <p class="text-xs text-muted-foreground mt-0.5">{{ t('knowledge.subtitle') }}</p>
+        </div>
+        <ElButton type="primary" @click="showCreateDialog = true">
+          <Plus class="size-4 mr-1.5" /> {{ t('knowledge.create') }}
+        </ElButton>
+      </div>
     </div>
 
-    <!-- KB List -->
-    <div v-if="knowledgeBases.length > 0" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <div
-        v-for="kb in knowledgeBases"
-        :key="kb.id"
-        class="rounded-lg border p-4 hover:shadow-sm transition-shadow"
-      >
-        <div class="flex items-start justify-between">
-          <div>
-            <h3 class="font-medium">{{ kb.name }}</h3>
-            <p v-if="kb.description" class="text-sm text-muted-foreground mt-1">{{ kb.description }}</p>
-          </div>
-          <div class="flex items-center gap-1">
-            <ElTooltip :content="t('knowledge.test.title')">
-              <ElButton size="small" text @click="handleSearch(kb)">
-                <Search class="size-4" />
-              </ElButton>
-            </ElTooltip>
+    <div class="p-6">
+      <div v-if="knowledgeBases.length > 0" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          v-for="kb in knowledgeBases"
+          :key="kb.id"
+          class="group rounded-xl border bg-card p-5 hover:shadow-sm transition-all duration-150"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-start gap-3 min-w-0">
+              <div class="mt-0.5 size-8 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+                <Database class="size-4 text-secondary" />
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-medium text-sm text-foreground">{{ kb.name }}</h3>
+                <p v-if="kb.description" class="text-xs text-muted-foreground mt-1 line-clamp-2">{{ kb.description }}</p>
+              </div>
+            </div>
             <ElDropdown trigger="click" @command="(cmd: string) => handleAction(cmd, kb)">
-              <ElButton size="small" text>
+              <ElButton size="small" text class="-mr-1.5">
                 <Ellipsis class="size-4" />
               </ElButton>
               <template #dropdown>
                 <ElDropdownMenu>
+                  <ElDropdownItem command="search">
+                    <Search class="size-3.5 mr-2" /> {{ t('knowledge.test.title') }}
+                  </ElDropdownItem>
                   <ElDropdownItem command="delete">
-                    <Trash2 class="size-3 mr-1" /> {{ t('common.delete') }}
+                    <Trash2 class="size-3.5 mr-2 text-destructive" /> {{ t('common.delete') }}
                   </ElDropdownItem>
                 </ElDropdownMenu>
               </template>
             </ElDropdown>
           </div>
-        </div>
-        <div class="mt-3 text-xs text-muted-foreground">
-          <span>{{ t('knowledge.model') }}: {{ kb.embedding_model_config.model }}</span>
-          <span class="ml-3">{{ t('knowledge.dimensions') }}: {{ kb.embedding_model_config.dimensions }}</span>
+
+          <div class="mt-4 pt-3 border-t flex items-center gap-3 text-xs text-muted-foreground">
+            <span class="inline-flex items-center gap-1">
+              <Cpu class="size-3" />
+              {{ kb.embedding_model_config.model }}
+            </span>
+            <span class="inline-flex items-center gap-1">
+              <Layers class="size-3" />
+              {{ kb.embedding_model_config.dimensions }}d
+            </span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <ElEmpty v-else :description="t('knowledge.empty')" />
+      <div v-else class="flex flex-col items-center justify-center py-24 text-center">
+        <div class="size-12 rounded-full bg-muted flex items-center justify-center mb-4">
+          <Database class="size-6 text-muted-foreground" />
+        </div>
+        <p class="text-sm text-muted-foreground">{{ t('knowledge.empty') }}</p>
+        <ElButton type="primary" class="mt-4" @click="showCreateDialog = true">
+          <Plus class="size-4 mr-1.5" /> {{ t('knowledge.create') }}
+        </ElButton>
+      </div>
+    </div>
 
     <CreateKnowledgeBaseDialog
       :open="showCreateDialog"
@@ -65,8 +87,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElEmpty, ElMessage, ElMessageBox, ElTooltip } from 'element-plus';
-import { Plus, Trash2, Ellipsis, Search } from 'lucide-vue-next';
+import { ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElMessage, ElMessageBox } from 'element-plus';
+import { Plus, Trash2, Ellipsis, Search, Database, Cpu, Layers } from 'lucide-vue-next';
 import { useKnowledgeBases } from '@/composables/useKnowledgeBases';
 import { knowledgeBaseApi } from '@/api';
 import type { KnowledgeBaseView } from '@/api';
@@ -89,6 +111,9 @@ function handleSearch(kb: KnowledgeBaseView) {
 }
 
 async function handleAction(cmd: string, kb: any) {
+  if (cmd === 'search') {
+    handleSearch(kb);
+  }
   if (cmd === 'delete') {
     try {
       await ElMessageBox.confirm(t('knowledge.deleteConfirm'), t('common.confirm'), { type: 'warning' });

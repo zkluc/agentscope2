@@ -1,156 +1,129 @@
 <template>
-	<div class="flex flex-col w-[var(--sidebar-width-icon)] border-r bg-sidebar h-full">
-		<!-- Header -->
-		<div class="flex items-center justify-center h-12 mt-2">
-			<ElIcon :size="32" class="rounded-lg">
-				<Monitor />
-			</ElIcon>
-		</div>
+  <div class="flex flex-col w-[var(--sidebar-width-icon)] border-r bg-sidebar h-full relative">
+    <div class="flex items-center justify-center h-14 mt-1">
+      <div class="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+        <Bot class="size-5 text-primary" />
+      </div>
+    </div>
 
-		<!-- Main nav -->
-		<div class="flex-1 flex flex-col gap-1 px-1 py-2">
-			<!-- Chat nav item -->
-			<ElTooltip :content="t('common.chat')" placement="right" :show-arrow="false">
-				<button
-					@click="navigateTo('/chat')"
-					:class="[
-						'flex items-center justify-center w-10 h-10 rounded-md transition-colors',
-						isActive('/chat')
-							? 'bg-sidebar-accent text-sidebar-accent-foreground'
-							: 'text-sidebar-foreground hover:bg-sidebar-accent/50',
-					]"
-				>
-					<ElIcon :size="20"><ChatDotRound /></ElIcon>
-				</button>
-			</ElTooltip>
+    <nav class="flex-1 flex flex-col gap-1 px-2 py-3">
+      <template v-for="item in mainNav" :key="item.path">
+        <ElTooltip :content="item.label" placement="right" :show-arrow="false">
+          <button
+            @click="navigateTo(item.path)"
+            class="flex items-center justify-center h-10 w-10 mx-auto rounded-lg transition-all duration-150 relative"
+            :class="isActive(item.path) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
+          >
+            <div
+              v-if="isActive(item.path)"
+              class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-primary"
+            />
+            <Component :is="item.icon" class="size-[18px]" />
+          </button>
+        </ElTooltip>
+      </template>
+    </nav>
 
-			<!-- Schedule nav item -->
-			<ElTooltip :content="t('common.schedule')" placement="right" :show-arrow="false">
-				<button
-					@click="navigateTo('/schedule')"
-					:class="[
-						'flex items-center justify-center w-10 h-10 rounded-md transition-colors',
-						isActive('/schedule')
-							? 'bg-sidebar-accent text-sidebar-accent-foreground'
-							: 'text-sidebar-foreground hover:bg-sidebar-accent/50',
-					]"
-				>
-					<ElIcon :size="20"><Calendar /></ElIcon>
-				</button>
-			</ElTooltip>
-		</div>
+    <div class="flex flex-col gap-1 px-2 pb-3">
+      <template v-for="item in secondaryNav" :key="item.path">
+        <ElTooltip :content="item.label" placement="right" :show-arrow="false">
+          <button
+            @click="navigateTo(item.path)"
+            class="flex items-center justify-center h-10 w-10 mx-auto rounded-lg transition-all duration-150 relative"
+            :class="isActive(item.path) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
+          >
+            <div
+              v-if="isActive(item.path)"
+              class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-primary"
+            />
+            <Component :is="item.icon" class="size-[18px]" />
+          </button>
+        </ElTooltip>
+      </template>
 
-		<!-- Secondary nav -->
-		<div class="flex flex-col gap-1 px-1 pb-2">
-			<!-- Credential nav item -->
-			<ElTooltip :content="t('common.credential')" placement="right" :show-arrow="false">
-				<button
-					@click="navigateTo('/credential')"
-					:class="[
-						'flex items-center justify-center w-10 h-10 rounded-md transition-colors',
-						isActive('/credential')
-							? 'bg-sidebar-accent text-sidebar-accent-foreground'
-							: 'text-sidebar-foreground hover:bg-sidebar-accent/50',
-					]"
-				>
-					<ElIcon :size="20"><Key /></ElIcon>
-				</button>
-			</ElTooltip>
+      <div class="border-t my-2 mx-3" />
 
-			<!-- Knowledge nav item -->
-			<ElTooltip :content="t('common.knowledge')" placement="right" :show-arrow="false">
-				<button
-					@click="navigateTo('/knowledge')"
-					:class="[
-						'flex items-center justify-center w-10 h-10 rounded-md transition-colors',
-						isActive('/knowledge')
-							? 'bg-sidebar-accent text-sidebar-accent-foreground'
-							: 'text-sidebar-foreground hover:bg-sidebar-accent/50',
-					]"
-				>
-					<ElIcon :size="20"><Collection /></ElIcon>
-				</button>
-			</ElTooltip>
-		</div>
+      <ElTooltip
+        :content="locale.startsWith('zh') ? t('common.switchToEn') : t('common.switchToZh')"
+        placement="right"
+        :show-arrow="false"
+      >
+        <button
+          @click="toggleLanguage"
+          class="flex items-center justify-center h-10 w-10 mx-auto rounded-lg transition-all duration-150 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <Languages class="size-[18px]" />
+        </button>
+      </ElTooltip>
 
-		<!-- Footer -->
-		<div class="flex flex-col gap-1 px-1 pb-2">
-			<!-- Language toggle -->
-			<ElTooltip
-				:content="
-					locale.startsWith('zh') ? t('common.switchToEn') : t('common.switchToZh')
-				"
-				placement="right"
-				:show-arrow="false"
-			>
-				<button
-					@click="toggleLanguage"
-					class="flex items-center justify-center w-10 h-10 rounded-md transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50"
-				>
-					<ElIcon :size="20"><Coffee /></ElIcon>
-				</button>
-			</ElTooltip>
+      <ElTooltip :content="t('tour.trigger')" placement="right" :show-arrow="false">
+        <button
+          @click="startTour"
+          class="flex items-center justify-center h-10 w-10 mx-auto rounded-lg transition-all duration-150 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <Compass class="size-[18px]" />
+        </button>
+      </ElTooltip>
 
-			<!-- Tour trigger -->
-			<ElTooltip :content="t('tour.trigger')" placement="right" :show-arrow="false">
-				<button
-					@click="startTour"
-					class="flex items-center justify-center w-10 h-10 rounded-md transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50"
-				>
-					<ElIcon :size="20"><Compass /></ElIcon>
-				</button>
-			</ElTooltip>
-
-			<!-- Settings -->
-			<ElTooltip :content="t('common.settings')" placement="right" :show-arrow="false">
-				<button
-					@click="navigateTo('/setup')"
-					class="flex items-center justify-center w-10 h-10 rounded-md transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50"
-				>
-					<ElIcon :size="20"><Setting /></ElIcon>
-				</button>
-			</ElTooltip>
-		</div>
-	</div>
+      <ElTooltip :content="t('common.settings')" placement="right" :show-arrow="false">
+        <button
+          @click="navigateTo('/setup')"
+          class="flex items-center justify-center h-10 w-10 mx-auto rounded-lg transition-all duration-150 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <Settings class="size-[18px]" />
+        </button>
+      </ElTooltip>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router';
 import { useTranslation } from '@/i18n/useI18n';
+import { ElTooltip } from 'element-plus';
 import {
-	Calendar,
-	ChatDotRound,
-	Collection,
-	Compass,
-	Key,
-	Monitor,
-	Setting,
-} from '@element-plus/icons-vue';
+  Bot,
+  MessageSquare,
+  Calendar,
+  Key,
+  Library,
+  Languages,
+  Compass,
+  Settings,
+} from 'lucide-vue-next';
 
 const router = useRouter();
 const route = useRoute();
 const { t, locale } = useTranslation();
 
+const mainNav = [
+  { path: '/chat', icon: MessageSquare, label: t('common.chat') },
+  { path: '/schedule', icon: Calendar, label: t('common.schedule') },
+];
+
+const secondaryNav = [
+  { path: '/credential', icon: Key, label: t('common.credential') },
+  { path: '/knowledge', icon: Library, label: t('common.knowledge') },
+];
+
 function isActive(path: string) {
-	return route.path.startsWith(path);
+  return route.path.startsWith(path);
 }
 
 function navigateTo(path: string) {
-	router.push(path);
+  router.push(path);
 }
 
 function toggleLanguage() {
-	const next = locale.value.startsWith('zh') ? 'en' : 'zh';
-	localStorage.setItem('locale', next);
-	window.location.reload();
+  const next = locale.value.startsWith('zh') ? 'en' : 'zh';
+  localStorage.setItem('locale', next);
+  window.location.reload();
 }
 
 function startTour() {
-	if (!route.path.startsWith('/chat')) {
-		sessionStorage.setItem('force_tour', '1');
-		router.push('/chat');
-	} else {
-		// Tour will be implemented later
-	}
+  if (!route.path.startsWith('/chat')) {
+    sessionStorage.setItem('force_tour', '1');
+    router.push('/chat');
+  }
 }
 </script>
