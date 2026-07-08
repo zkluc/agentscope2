@@ -53,6 +53,9 @@
 
     <template #footer>
       <div class="flex gap-2">
+        <ElButton size="small" @click="editOpen = true">
+          <PenLine class="size-3 mr-1" />{{ t('common.edit') }}
+        </ElButton>
         <ElButton type="danger" size="small" @click="deleteOpen = true">
           <Trash2 class="size-3 mr-1" />{{ t('common.delete') }}
         </ElButton>
@@ -61,26 +64,53 @@
     </template>
 
     <ElDialog v-if="schedule" :model-value="deleteOpen" :width="400" @update:model-value="deleteOpen = $event">
-      <h3 class="text-lg font-semibold">{{ t('common.deleteTitle', { name: `"${(schedule as any).data.name}"` }) }}</h3>
+      <h3 class="text-lg font-semibold">{{ t('common.deleteTitle', { name: `"${schedule.data.name}"` }) }}</h3>
       <p class="text-sm text-muted-foreground mt-1">{{ t('common.deleteDescription') }}</p>
       <template #footer>
         <ElButton @click="deleteOpen = false">{{ t('common.cancel') }}</ElButton>
         <ElButton type="danger" @click="handleDelete">{{ t('common.confirm') }}</ElButton>
       </template>
     </ElDialog>
+
+    <ElDialog v-if="schedule" :model-value="editOpen" :width="520" @update:model-value="editOpen = $event" top="5vh">
+      <template #header>
+        <h3 class="text-lg font-semibold">{{ t('schedule.editTitle') }}</h3>
+        <p class="text-sm text-muted-foreground mt-1">{{ t('schedule.editDescription') }}</p>
+      </template>
+      <ElForm label-position="top">
+        <ElFormItem :label="t('common.name')" required>
+          <ElInput v-model="editForm.name" size="small" />
+        </ElFormItem>
+        <ElFormItem :label="t('schedule.createSchedule.descriptionLabel')">
+          <ElInput v-model="editForm.description" type="textarea" :rows="2" />
+        </ElFormItem>
+        <ElFormItem :label="t('schedule.stateful')">
+          <ElSwitch v-model="editForm.stateful" />
+        </ElFormItem>
+        <p v-if="editError" class="text-sm text-red-500">{{ editError }}</p>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="editOpen = false" :disabled="editSubmitting">{{ t('common.cancel') }}</ElButton>
+        <ElButton type="primary" @click="handleEdit" :disabled="editSubmitting || !editForm.name.trim()">
+          <Loader2 v-if="editSubmitting" class="animate-spin size-3.5 mr-1" />
+          {{ editSubmitting ? t('common.saving') : t('common.save') }}
+        </ElButton>
+      </template>
+    </ElDialog>
   </ElDrawer>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { ElDrawer, ElButton, ElDialog } from 'element-plus';
-import { Trash2 } from 'lucide-vue-next';
+import { ref, computed, watch, reactive } from 'vue';
+import { ElDrawer, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElSwitch, ElMessage } from 'element-plus';
+import { Trash2, PenLine, Loader2 } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import { scheduleApi } from '@/api';
 import type { ScheduleRecord, SessionRecord } from '@/api';
 import StatusBadge from '@/components/badge/StatusBadge.vue';
 import { parseCronExpression, getFrequencyLabel } from './schedule-utils';
 import { useAgents } from '@/composables/useAgents';
+import { useSchedules } from '@/composables/useSchedules';
 import { useTranslation } from '@/i18n/useI18n';
 
 const props = defineProps<{
@@ -95,10 +125,20 @@ const emit = defineEmits<{
 
 const { t } = useTranslation();
 const { agents } = useAgents();
+const { update } = useSchedules();
 const router = useRouter();
 const deleteOpen = ref(false);
 const sessions = ref<SessionRecord[]>([]);
 const sessionsLoading = ref(false);
+
+const editOpen = ref(false);
+const editSubmitting = ref(false);
+const editError = ref('');
+const editForm = reactive({
+  name: '',
+  description: '',
+  stateful: false,
+});
 
 watch(() => [props.open, props.schedule], async ([open]) => {
   const s = props.schedule;
@@ -116,6 +156,35 @@ watch(() => [props.open, props.schedule], async ([open]) => {
     sessionsLoading.value = false;
   }
 }, { immediate: true });
+
+watch(() => editOpen.value, (val) => {
+  if (val && props.schedule) {
+    const d = props.schedule.data;
+    editForm.name = d.name;
+    editForm.description = d.description;
+    editForm.stateful = d.stateful;
+    editError.value = '';
+  }
+});
+
+async function handleEdit() {
+  if (!props.schedule || !editForm.name.trim()) return;
+  editSubmitting.value = true;
+  editError.value = '';
+  try {
+    await update(props.schedule.id, {
+      name: editForm.name.trim(),
+      description: editForm.description.trim() || undefined,
+      stateful: editForm.stateful,
+    });
+    ElMessage.success(t('common.saveSuccess'));
+    editOpen.value = false;
+  } catch (e) {
+    editError.value = String(e);
+  } finally {
+    editSubmitting.value = false;
+  }
+}
 
 const parsed = computed(() => {
   if (!props.schedule) return null;

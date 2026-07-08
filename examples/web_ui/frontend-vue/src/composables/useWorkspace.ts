@@ -47,22 +47,26 @@ export function useWorkspace(agentId: ReturnType<typeof ref<string>>, sessionId:
 	});
 
 	async function addMcp(mcp: MCPClient) {
-		await workspaceApi.mcp.add(agentId.value!, sessionId.value!, mcp);
+		if (!agentId.value || !sessionId.value) return;
+		await workspaceApi.mcp.add(agentId.value, sessionId.value, mcp);
 		await refetchMcp();
 	}
 
 	async function removeMcp(name: string) {
-		await workspaceApi.mcp.remove(name, agentId.value!, sessionId.value!);
+		if (!agentId.value || !sessionId.value) return;
+		await workspaceApi.mcp.remove(name, agentId.value, sessionId.value);
 		await refetchMcp();
 	}
 
 	async function addSkill(body: AddSkillRequest) {
-		await workspaceApi.skill.add(agentId.value!, sessionId.value!, body);
+		if (!agentId.value || !sessionId.value) return;
+		await workspaceApi.skill.add(agentId.value, sessionId.value, body);
 		await refetchSkills();
 	}
 
 	async function removeSkill(name: string) {
-		await workspaceApi.skill.remove(name, agentId.value!, sessionId.value!);
+		if (!agentId.value || !sessionId.value) return;
+		await workspaceApi.skill.remove(name, agentId.value, sessionId.value);
 		await refetchSkills();
 	}
 

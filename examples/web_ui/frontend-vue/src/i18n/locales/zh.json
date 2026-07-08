@@ -65,9 +65,18 @@
                                     "count_other":  "{count} 个任务",
                                     "count":  "{count} 个任务"
                                 },
-                 "grep":  {
-                              "name":  "Grep"
-                          }
+                "grep":  {
+                             "name":  "Grep"
+                         },
+                "bash":  {
+                             "name":  "Bash"
+                         },
+                "write":  {
+                              "name":  "写入"
+                          },
+                "edit":  {
+                             "name":  "编辑"
+                         }
              },
     "textInput":  {
                       "toComplete":  "补全",

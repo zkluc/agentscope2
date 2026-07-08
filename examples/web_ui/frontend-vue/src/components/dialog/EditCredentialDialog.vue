@@ -71,7 +71,7 @@ watch(() => props.open, async (val) => {
       for (const [key, prop] of Object.entries(matched.properties)) {
         if (key === 'id' || key === 'type' || prop.const !== undefined) continue;
         if (prop.writeOnly) continue;
-        const existing = (props.credential!.data as any)[key];
+        const existing = props.credential ? (props.credential.data as any)[key] : undefined;
         if (existing !== undefined) {
           (values as any)[key] = existing;
         }

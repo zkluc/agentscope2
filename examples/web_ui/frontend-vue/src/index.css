@@ -67,6 +67,13 @@ body,
   --chart-4: oklch(0.5 0.18 310);
   --chart-5: oklch(0.6 0.15 25);
   --radius: 0.5rem;
+
+  --brass: #C9A84C;
+  --brass-dim: rgba(201, 168, 76, 0.15);
+  --warm-stone: #EEECE8;
+  --warm-thinking: #F4F1EC;
+  --slate-muted: #7A8B99;
+
   --sidebar: oklch(0.992 0.006 270);
   --sidebar-foreground: oklch(0.13 0.02 270);
   --sidebar-primary: oklch(0.5 0.22 280);

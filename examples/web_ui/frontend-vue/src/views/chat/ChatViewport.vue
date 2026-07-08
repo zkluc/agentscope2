@@ -29,22 +29,22 @@
               />
               <ElDropdown trigger="click" @command="togglePanel">
                 <ElButton size="small" class="gap-1 px-2">
-                  <PanelRight class="size-3.5" />
-                  <ChevronDown class="size-3 text-muted-foreground" />
+                  <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                  <svg class="size-3 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                 </ElButton>
                 <template #dropdown>
                   <ElDropdownMenu>
                     <ElDropdownItem command="plan">
-                      <ListTodo class="size-3.5 mr-2" /> {{ t('panel.plan.title') }}
+                      {{ t('panel.plan.title') }}
                     </ElDropdownItem>
                     <ElDropdownItem command="skill">
-                      <BookText class="size-3.5 mr-2" /> {{ t('panel.skill.title') }}
+                      {{ t('panel.skill.title') }}
                     </ElDropdownItem>
                     <ElDropdownItem command="permission">
-                      <ShieldCheck class="size-3.5 mr-2" /> {{ t('panel.permission.title') }}
+                      {{ t('panel.permission.title') }}
                     </ElDropdownItem>
                     <ElDropdownItem command="knowledge" divided>
-                      <Database class="size-3.5 mr-2" /> {{ t('panel.knowledge.title') }}
+                      {{ t('panel.knowledge.title') }}
                     </ElDropdownItem>
                   </ElDropdownMenu>
                 </template>
@@ -65,7 +65,7 @@
               <template v-if="subagentHitl.length > 0" #footer>
                 <div class="space-y-2 pb-2">
                   <SubagentHitlCard
-                    v-for="(entry, idx) in subagentHitl"
+                    v-for="(entry, idx) in subagentHitl.filter(Boolean)"
                     :key="idx"
                     :entry="entry"
                     :on-confirm="(toolCall: any, confirm: boolean, rules?: any) => handleSubagentConfirm(entry, toolCall, confirm, rules)"
@@ -82,14 +82,14 @@
             <div v-for="key in col" :key="key" class="rounded-xl border bg-card p-4 mb-3">
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <ListTodo v-if="key === 'plan'" class="size-4 text-primary" />
-                  <BookText v-if="key === 'skill'" class="size-4 text-secondary" />
-                  <ShieldCheck v-if="key === 'permission'" class="size-4 text-primary" />
-                  <Database v-if="key === 'knowledge'" class="size-4 text-secondary" />
+                  <span v-if="key === 'plan'" class="size-2 rounded-full bg-[var(--brass)] inline-block mr-2" />
+                  <span v-if="key === 'skill'" class="size-2 rounded-full bg-secondary inline-block mr-2" />
+                  <span v-if="key === 'permission'" class="size-2 rounded-full bg-[var(--brass)] inline-block mr-2" />
+                  <span v-if="key === 'knowledge'" class="size-2 rounded-full bg-secondary inline-block mr-2" />
                   <span>{{ panelLabel(key) }}</span>
                 </div>
                 <ElButton size="small" circle @click="closePanel(key)">
-                  <X class="size-3" />
+                  <span class="text-muted-foreground text-xs">✕</span>
                 </ElButton>
               </div>
               <div class="text-sm text-muted-foreground">
@@ -108,7 +108,6 @@
                   :loading="mcpListLoading"
                   :on-add="addMcp"
                   :on-remove="removeMcpItem"
-                  v-show="false"
                 />
                 <KnowledgeBasePanel
                   v-if="key === 'knowledge'"
@@ -137,7 +136,6 @@ import { ref, computed, watch } from 'vue';
 import { Splitpanes, Pane } from 'splitpanes';
 import 'splitpanes/dist/splitpanes.css';
 import { ElDropdown, ElDropdownMenu, ElDropdownItem, ElButton, ElMessage } from 'element-plus';
-import { PanelRight, ChevronDown, ListTodo, BookText, ShieldCheck, Database, X } from 'lucide-vue-next';
 import type { ChatModelConfig, TTSModelConfig, SessionKnowledgeConfig, ContentBlock } from '@/api';
 import type { ToolCallBlock } from '@agentscope-ai/agentscope/message';
 import { UserMsg } from '@agentscope-ai/agentscope/message';

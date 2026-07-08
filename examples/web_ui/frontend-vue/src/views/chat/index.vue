@@ -156,7 +156,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { ElSelect, ElOption, ElButton, ElDialog, ElTooltip, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon } from 'element-plus';
+import { ElSelect, ElOption, ElButton, ElDialog, ElTooltip, ElDropdown, ElDropdownMenu, ElDropdownItem } from 'element-plus';
 import { Plus, Settings2, Trash2, Ellipsis, Pencil, Download, BotMessageSquare, CalendarClock, MessageSquare } from 'lucide-vue-next';
 import { useAgents } from '@/composables/useAgents';
 import { useSessions } from '@/composables/useSessions';

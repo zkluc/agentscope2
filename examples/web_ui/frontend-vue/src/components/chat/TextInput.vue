@@ -3,8 +3,8 @@
     id="tour-chat-input"
     data-tour="chat-input"
     :class="[
-      'flex flex-col gap-2 rounded-2xl border bg-card shadow-xs transition-shadow duration-150',
-      isFocused ? 'shadow-sm ring-1 ring-primary/20' : '',
+      'flex flex-col gap-2 rounded-[10px] border border-border/80 bg-card transition-shadow duration-150',
+      isFocused ? 'ring-1 ring-[var(--brass)]/20' : '',
       className,
     ]"
   >
@@ -15,13 +15,13 @@
           :key="index"
           class="flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1.5 text-xs"
         >
-          <Loader2 v-if="file.status === 'processing'" class="h-3 w-3 shrink-0 animate-spin text-primary" />
+          <span v-if="file.status === 'processing'" class="inline-block h-3 w-3 shrink-0 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           <span class="max-w-[180px] truncate text-foreground/80">{{ file.name }}</span>
           <button
             class="text-muted-foreground hover:text-foreground transition-colors"
             @click="files.splice(index, 1)"
           >
-            <X class="h-3 w-3" />
+            ✕
           </button>
         </div>
       </div>
@@ -67,7 +67,7 @@
               class="shrink-0 rounded-full size-8"
               @click="fileInputRef?.click()"
             >
-              <Paperclip class="size-3.5" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
             </ElButton>
           </ElTooltip>
 
@@ -78,7 +78,7 @@
               class="shrink-0 rounded-full size-8"
               @click="handleSend"
             >
-              <Send class="size-3.5" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3.5"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
             </ElButton>
           </ElTooltip>
 
@@ -99,7 +99,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import type { ContentBlock, TextBlock } from '@agentscope-ai/agentscope/message';
-import { Paperclip, Send, Loader2, X } from 'lucide-vue-next';
+
 import { ElTooltip, ElButton } from 'element-plus';
 import { useTranslation } from '@/i18n/useI18n';
 import { isMac } from '@/utils/platform';

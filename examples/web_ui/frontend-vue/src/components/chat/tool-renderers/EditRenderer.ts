@@ -30,7 +30,7 @@ function renderEditDiff(result: ToolResultBlock) {
 }
 
 export const EditRenderer: ToolRenderer = {
-  getDisplayName: (call: ToolCallBlock) => call.name,
+  getDisplayName: (_call: ToolCallBlock, t: TFunction) => t('tool.edit.name'),
 
   renderCallArgs: (call: ToolCallBlock) => {
     const fileName = tryGetFileName(call.input);

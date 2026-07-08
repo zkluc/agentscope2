@@ -38,6 +38,9 @@
                   <ElDropdownItem command="search">
                     <Search class="size-3.5 mr-2" /> {{ t('knowledge.test.title') }}
                   </ElDropdownItem>
+                  <ElDropdownItem command="edit">
+                    <PenLine class="size-3.5 mr-2" /> {{ t('common.edit') }}
+                  </ElDropdownItem>
                   <ElDropdownItem command="delete">
                     <Trash2 class="size-3.5 mr-2 text-destructive" /> {{ t('common.delete') }}
                   </ElDropdownItem>
@@ -70,25 +73,48 @@
       </div>
     </div>
 
-    <CreateKnowledgeBaseDialog
-      :open="showCreateDialog"
-      @update:open="showCreateDialog = $event"
-      :on-created="refetch"
-    />
+      <CreateKnowledgeBaseDialog
+        :open="showCreateDialog"
+        @update:open="showCreateDialog = $event"
+        :on-created="refetch"
+      />
 
-    <KnowledgeSearchDrawer
-      :open="searchOpen"
-      :knowledge-base-id="searchKbId"
-      :knowledge-base-name="searchKbName"
-      @update:open="searchOpen = $event"
-    />
-  </div>
+      <KnowledgeSearchDrawer
+        :open="searchOpen"
+        :knowledge-base-id="searchKbId"
+        :knowledge-base-name="searchKbName"
+        @update:open="searchOpen = $event"
+      />
+
+      <ElDialog
+        :model-value="editDialogOpen"
+        :width="480"
+        @update:model-value="editDialogOpen = $event"
+        top="5vh"
+      >
+        <template #header>
+          <h3 class="text-lg font-semibold">{{ t('knowledge.editTitle') }}</h3>
+        </template>
+        <ElForm label-position="top">
+          <ElFormItem :label="t('knowledge.name')" required>
+            <ElInput v-model="editForm.name" />
+          </ElFormItem>
+          <ElFormItem :label="t('knowledge.description')">
+            <ElInput v-model="editForm.description" type="textarea" :rows="2" />
+          </ElFormItem>
+        </ElForm>
+        <template #footer>
+          <ElButton @click="editDialogOpen = false">{{ t('common.cancel') }}</ElButton>
+          <ElButton type="primary" :loading="editLoading" @click="handleEditKb">{{ t('common.save') }}</ElButton>
+        </template>
+      </ElDialog>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElMessage, ElMessageBox } from 'element-plus';
-import { Plus, Trash2, Ellipsis, Search, Database, Cpu, Layers } from 'lucide-vue-next';
+import { ref, reactive } from 'vue';
+import { ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElDialog, ElForm, ElFormItem, ElInput, ElMessage, ElMessageBox } from 'element-plus';
+import { Plus, Trash2, Ellipsis, Search, Database, Cpu, Layers, PenLine } from 'lucide-vue-next';
 import { useKnowledgeBases } from '@/composables/useKnowledgeBases';
 import { knowledgeBaseApi } from '@/api';
 import type { KnowledgeBaseView } from '@/api';
@@ -104,15 +130,48 @@ const searchOpen = ref(false);
 const searchKbId = ref('');
 const searchKbName = ref('');
 
+const editDialogOpen = ref(false);
+const editLoading = ref(false);
+const editKbId = ref('');
+const editForm = reactive({ name: '', description: '' });
+
 function handleSearch(kb: KnowledgeBaseView) {
   searchKbId.value = kb.id;
   searchKbName.value = kb.name;
   searchOpen.value = true;
 }
 
+function handleEditOpen(kb: KnowledgeBaseView) {
+  editKbId.value = kb.id;
+  editForm.name = kb.name;
+  editForm.description = kb.description || '';
+  editDialogOpen.value = true;
+}
+
+async function handleEditKb() {
+  if (!editForm.name.trim()) return;
+  editLoading.value = true;
+  try {
+    await knowledgeBaseApi.update(editKbId.value, {
+      name: editForm.name.trim(),
+      description: editForm.description.trim() || undefined,
+    });
+    ElMessage.success(t('knowledge.updateSuccess'));
+    editDialogOpen.value = false;
+    refetch();
+  } catch {
+    ElMessage.error(t('knowledge.updateError'));
+  } finally {
+    editLoading.value = false;
+  }
+}
+
 async function handleAction(cmd: string, kb: any) {
   if (cmd === 'search') {
     handleSearch(kb);
+  }
+  if (cmd === 'edit') {
+    handleEditOpen(kb);
   }
   if (cmd === 'delete') {
     try {

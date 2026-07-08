@@ -3,14 +3,14 @@
     <div
       v-if="showBody"
       :class="[
-        'rounded-xl space-y-2 max-w-full overflow-hidden',
+        'space-y-2 max-w-full overflow-hidden',
         isUser
-          ? 'w-fit max-w-[75%] bg-primary/5 border border-primary/10'
-          : 'w-full min-w-full',
+          ? 'w-fit max-w-[75%] bg-[var(--warm-stone)] rounded-[8px] px-3 py-2'
+          : 'w-full',
       ]"
     >
       <template v-for="(block, i) in blocks" :key="i">
-        <div v-if="block.type === 'tool_call_group'" class="flex flex-col gap-y-3 text-muted-foreground px-4 first:pt-4 last:pb-4">
+        <div v-if="block.type === 'tool_call_group'" :class="blockPad">
           <ToolGroupRenderer :tool-name="block.toolName" :calls="block.calls" />
           <ConfirmCard
             v-if="block.askingCall"
@@ -21,29 +21,42 @@
             }"
           />
         </div>
-        <div v-else-if="block.type === 'text'" class="prose w-full min-w-full px-4 first:pt-4 last:pb-4">
+        <div v-else-if="block.type === 'text'" :class="['prose prose-sm w-full min-w-full', blockPad]">
           <VueMarkdown :source="block.text" />
         </div>
-        <details v-else-if="block.type === 'thinking'" class="group text-muted-foreground px-4 first:pt-4 last:pb-4">
-          <summary class="flex items-center gap-2 cursor-pointer select-none text-xs font-medium tracking-wider uppercase text-muted-foreground/70 hover:text-foreground transition-colors">
-            <div class="h-px flex-1 bg-border" />
-            <ChevronDownIcon class="size-3 transition-transform group-open:rotate-180" />
-            {{ t('messageBubble.thinking') }}
-            <div class="h-px flex-1 bg-border" />
-          </summary>
-          <p class="mt-2 whitespace-pre-wrap text-xs leading-relaxed rounded-lg bg-muted/50 p-3">{{ block.thinking }}</p>
-        </details>
+        <div v-else-if="block.type === 'thinking'" :class="blockPad">
+          <div
+            @click="toggleThinking(i)"
+            class="flex items-center cursor-pointer select-none border-t border-[var(--brass)] pt-2"
+          >
+            <span
+              :class="[
+                'text-[var(--brass)] transition-transform duration-200 text-xs',
+                expandedThinking[i] ? 'rotate-90' : '',
+              ]"
+            >▸</span>
+            <span class="text-[10px] font-mono tracking-wider text-[var(--brass)] uppercase ml-2">
+              {{ t('messageBubble.thinking') }}
+            </span>
+          </div>
+          <div
+            v-if="expandedThinking[i]"
+            class="mt-2 bg-[var(--warm-thinking)] border-l-2 border-[var(--brass)] rounded p-3 whitespace-pre-wrap text-xs"
+          >
+            {{ block.thinking }}
+          </div>
+        </div>
         <img
           v-else-if="block.type === 'data' && dataTypeOf(block) === 'image'"
           :src="dataSrc(block)"
           :alt="block.name || 'Uploaded image'"
-          class="max-h-80 max-w-full rounded-lg object-contain px-4 first:pt-4 last:pb-4"
+          :class="['max-h-80 max-w-full rounded-[8px] object-contain', blockPad]"
         />
         <video
           v-else-if="block.type === 'data' && dataTypeOf(block) === 'video'"
           controls
           :src="dataSrc(block)"
-          class="max-h-80 max-w-full rounded-lg px-4 first:pt-4 last:pb-4"
+          :class="['max-h-80 max-w-full rounded-[8px]', blockPad]"
         />
         <FileAttachment
           v-else-if="block.type === 'data' && dataTypeOf(block) !== 'audio'"
@@ -51,15 +64,17 @@
           :href="dataSrc(block)"
           :media-type="block.source.media_type"
         />
-        <div v-else-if="block.type === 'hint'" class="px-4 first:pt-4 last:pb-4 max-w-full">
+        <div v-else-if="block.type === 'hint'" :class="[blockPad, 'max-w-full']">
           <div class="rounded-lg border bg-muted/30 p-2">
             <ElButton class="group w-full" text @click="toggleHint(i)">
-              <component :is="hintIcon(block)" class="size-3.5 mr-2" />
+              <span class="text-xs mr-2">{{ hintIcon(block) }}</span>
               <span class="text-xs font-medium">{{ hintLabel(block) }}</span>
               <span v-if="hintSublabel(block)" class="text-muted-foreground font-normal truncate max-w-[200px] ml-1">
                 {{ hintSublabel(block) }}
               </span>
-              <ChevronDownIcon :class="['ml-auto size-3 transition-transform', expandedHints[i] ? 'rotate-180' : '']" />
+              <span
+                :class="['ml-auto text-xs transition-transform duration-200 text-[var(--brass)]', expandedHints[i] ? 'rotate-90' : '']"
+              >▸</span>
             </ElButton>
             <div v-if="expandedHints[i]" class="p-2.5 pt-0 max-w-full overflow-hidden break-all text-muted-foreground text-xs">
               <template v-for="(inner, j) in hintItems(block)" :key="j">
@@ -70,17 +85,14 @@
         </div>
       </template>
     </div>
-    <div v-if="showFooter" class="flex flex-row items-center gap-2 text-muted-foreground px-1 w-full text-[11px] mt-1.5">
-      <span class="inline-flex items-center gap-1 rounded-md bg-muted/50 px-2 py-0.5 font-mono tabular-nums">
-        <Loader2 v-if="isRunning" class="size-3 animate-spin text-primary" />
-        <CheckCircle v-else class="size-3 text-secondary" />
+    <div v-if="showFooter" class="flex flex-row items-center gap-2 font-mono text-[11px] text-[var(--slate-muted)] px-1 w-full mt-1">
+      <span class="inline-flex items-center gap-1">
+        <span v-if="isRunning" class="inline-block size-2 rounded-full bg-current animate-pulse"></span>
+        <span v-else>✓</span>
         {{ elapsedText }}
       </span>
-      <span v-if="hasUsage" class="inline-flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-0.5 font-mono tabular-nums">
-        <ArrowUp class="size-2.5" />
-        {{ formatNumber((message.usage as any)?.input_tokens ?? 0) }}
-        <ArrowDown class="size-2.5" />
-        {{ formatNumber((message.usage as any)?.output_tokens ?? 0) }}
+      <span v-if="hasUsage" class="inline-flex items-center gap-1">
+        · ↑{{ formatNumber((message.usage as any)?.input_tokens ?? 0) }} ↓{{ formatNumber((message.usage as any)?.output_tokens ?? 0) }}
       </span>
     </div>
   </div>
@@ -90,8 +102,7 @@
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
 import type { ContentBlock, Msg, ToolCallBlock, DataBlock } from '@agentscope-ai/agentscope/message';
 import VueMarkdown from 'vue-markdown-render';
-import { Loader2, CheckCircle, ArrowUp, ArrowDown, ChevronDownIcon, Bot, CalendarClock, Wrench, MessageSquareQuote } from 'lucide-vue-next';
-import { ElTag, ElButton } from 'element-plus';
+import { ElButton } from 'element-plus';
 import ConfirmCard from './ConfirmCard.vue';
 import FileAttachment from './FileAttachment.vue';
 import ToolGroupRenderer from './ToolGroupRenderer.vue';
@@ -122,6 +133,7 @@ const props = defineProps<{
 const { t } = useTranslation();
 const now = ref(Date.now());
 const expandedHints = reactive<Record<number, boolean>>({});
+const expandedThinking = reactive<Record<number, boolean>>({});
 
 const isRunning = computed(() => !props.message.finished_at);
 const hasUsage = computed(() =>
@@ -129,6 +141,7 @@ const hasUsage = computed(() =>
   (((props.message as any).usage?.input_tokens ?? 0) > 0 || ((props.message as any).usage?.output_tokens ?? 0) > 0),
 );
 const isUser = computed(() => props.message.role === 'user');
+const blockPad = computed(() => isUser.value ? '' : 'px-4 first:pt-4 last:pb-4');
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 onMounted(() => {
@@ -175,16 +188,16 @@ function hintSublabel(block: any): string | null {
   }
 }
 
-function hintIcon(block: any): any {
-  if (!block.source) return MessageSquareQuote;
+function hintIcon(block: any): string {
+  if (!block.source) return '\u275E';
   try {
     const parsed = JSON.parse(block.source) as { label?: string };
-    if (parsed.label === 'team_message') return Bot;
-    if (parsed.label === 'schedule') return CalendarClock;
-    if (parsed.label === 'tool_output') return Wrench;
-    return MessageSquareQuote;
+    if (parsed.label === 'team_message') return '\u2139';
+    if (parsed.label === 'schedule') return '\u23F0';
+    if (parsed.label === 'tool_output') return '\u2692';
+    return '\u275E';
   } catch {
-    return MessageSquareQuote;
+    return '\u275E';
   }
 }
 
@@ -196,6 +209,10 @@ function hintItems(block: any): any[] {
 
 function toggleHint(index: number) {
   expandedHints[index] = !expandedHints[index];
+}
+
+function toggleThinking(index: number) {
+  expandedThinking[index] = !expandedThinking[index];
 }
 
 function groupToolCalls(content: ContentBlock[]): ExtendedContentBlock[] {

@@ -1,8 +1,8 @@
 <template>
-  <div class="rounded-xl border bg-card shadow-xs p-4 space-y-3 text-sm">
+  <div class="rounded-[10px] border border-border/80 bg-card p-4 space-y-3 text-sm">
     <div class="flex items-start gap-3">
       <div class="mt-0.5 size-6 rounded-md bg-primary/5 flex items-center justify-center shrink-0">
-        <Wrench class="size-3.5 text-primary" />
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
       </div>
       <div class="flex-1 min-w-0">
         <div class="font-medium text-foreground text-xs">{{ displayName }}</div>
@@ -20,7 +20,7 @@
           @click="handleConfirm(true)"
           @mouseenter="selected = 'yes'"
         >
-          <ChevronRight class="size-3" :class="selected === 'yes' ? 'opacity-100' : 'opacity-0'" />
+          <span class="text-xs" :class="selected === 'yes' ? 'text-primary' : 'text-muted-foreground/40'">▸</span>
           {{ t('common.yes') }}
         </button>
         <button
@@ -30,7 +30,7 @@
           @click="handleConfirm(true, [toolCall.suggested_rules![0]])"
           @mouseenter="selected = 'yes_with_rule'"
         >
-          <ChevronRight class="size-3 mt-0.5 shrink-0" :class="selected === 'yes_with_rule' ? 'opacity-100' : 'opacity-0'" />
+          <span class="text-xs mt-0.5 shrink-0" :class="selected === 'yes_with_rule' ? 'text-primary' : 'text-muted-foreground/40'">▸</span>
           <span class="leading-relaxed">{{ t('confirmCard.yesWithRule', { toolName: toolCall.suggested_rules![0].tool_name, ruleContent: toolCall.suggested_rules![0].rule_content }) }}</span>
         </button>
         <button
@@ -39,7 +39,7 @@
           @click="handleConfirm(false)"
           @mouseenter="selected = 'no'"
         >
-          <ChevronRight class="size-3" :class="selected === 'no' ? 'opacity-100' : 'opacity-0'" />
+          <span class="text-xs" :class="selected === 'no' ? 'text-destructive' : 'text-muted-foreground/40'">▸</span>
           {{ t('common.no') }}
         </button>
       </div>
@@ -50,7 +50,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import type { ToolCallBlock } from '@agentscope-ai/agentscope/message';
-import { ChevronRight, Wrench } from 'lucide-vue-next';
 import { useTranslation } from '@/i18n/useI18n';
 
 type SelectOption = 'yes' | 'yes_with_rule' | 'no';

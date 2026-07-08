@@ -41,12 +41,14 @@ export function useSessions(agentId: ReturnType<typeof ref<string>>) {
 	}
 
 	async function update(sessionId: string, body: UpdateSessionRequest) {
-		await sessionApi.update(sessionId, agentId.value!, body);
+		if (!agentId.value) return;
+		await sessionApi.update(sessionId, agentId.value, body);
 		await refetch();
 	}
 
 	async function remove(sessionId: string) {
-		await sessionApi.delete(sessionId, agentId.value!);
+		if (!agentId.value) return;
+		await sessionApi.delete(sessionId, agentId.value);
 		await refetch();
 	}
 

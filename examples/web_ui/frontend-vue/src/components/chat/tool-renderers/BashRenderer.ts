@@ -13,7 +13,7 @@ function parseInput(input: string): Record<string, unknown> {
 }
 
 export const BashRenderer: ToolRenderer = {
-  getDisplayName: () => 'Bash',
+  getDisplayName: (_call: ToolCallBlock, t: TFunction) => t('tool.bash.name'),
 
   renderCallArgs: (call: ToolCallBlock) => {
     const { command } = parseInput(call.input) as { command?: string };

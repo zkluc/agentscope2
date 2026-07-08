@@ -65,9 +65,18 @@
                                     "count_other":  "{count} tasks",
                                     "count":  "{count} task"
                                 },
-                 "grep":  {
-                              "name":  "Grep"
-                          }
+                "grep":  {
+                             "name":  "Grep"
+                         },
+                "bash":  {
+                             "name":  "Bash"
+                         },
+                "write":  {
+                              "name":  "Write"
+                          },
+                "edit":  {
+                             "name":  "Edit"
+                         }
              },
     "textInput":  {
                       "toComplete":  "to complete",

@@ -4,20 +4,18 @@
     class="group flex w-fit max-w-xs items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2 no-underline transition-colors hover:bg-muted"
   >
     <span class="flex size-9 shrink-0 items-center justify-center rounded-md bg-background text-muted-foreground">
-      <component :is="iconComponent" class="size-4" />
+      <span class="text-xs font-mono font-medium">{{ ext || '?' }}</span>
     </span>
     <span class="flex min-w-0 flex-col">
       <span class="truncate text-sm font-medium text-foreground">{{ displayName }}</span>
       <span v-if="ext" class="text-xs text-muted-foreground">{{ ext }}</span>
     </span>
-    <Download class="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+    <span class="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 text-sm">↓</span>
   </a>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Download, File, FileImage, FileAudio, FileVideo, FileText } from 'lucide-vue-next';
-
 const MIME_EXT: Record<string, string> = {
   'application/pdf': 'PDF',
   'application/json': 'JSON',
@@ -57,18 +55,6 @@ const ext = computed(() => {
 
 const displayName = computed(() => {
   return props.name || (ext.value ? `file.${ext.value.toLowerCase()}` : 'file');
-});
-
-const iconComponent = computed(() => {
-  const kind = props.mediaType.split('/')[0];
-  switch (kind) {
-    case 'image': return FileImage;
-    case 'audio': return FileAudio;
-    case 'video': return FileVideo;
-    case 'text': return FileText;
-    default:
-      return props.mediaType === 'application/pdf' ? FileText : File;
-  }
 });
 
 function classifyHref(href: string): { safe: boolean; downloadable: boolean } {

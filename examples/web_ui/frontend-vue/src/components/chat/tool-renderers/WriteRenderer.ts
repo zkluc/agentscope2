@@ -21,7 +21,7 @@ function isRunning(state: string | undefined): boolean {
 }
 
 export const WriteRenderer: ToolRenderer = {
-  getDisplayName: (call: ToolCallBlock) => call.name,
+  getDisplayName: (_call: ToolCallBlock, t: TFunction) => t('tool.write.name'),
 
   renderCallArgs: (call: ToolCallBlock) => {
     const fileName = tryGetFileName(call.input);

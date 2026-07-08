@@ -1,8 +1,8 @@
-import { h } from 'vue';
-import { Wrench } from 'lucide-vue-next';
+import { h, defineComponent, ref } from 'vue';
+import { ChevronRight } from 'lucide-vue-next';
 import type { ToolCallBlock, ToolResultBlock } from '@agentscope-ai/agentscope/message';
 import type { TFunction, ToolCallWithResult } from './types';
-import { ToolStateIcon, parseInput, tryGetFileName } from './_shared';
+import { CornerLine, ToolStateIcon, parseInput, tryGetFileName } from './_shared';
 
 export function defaultGetDisplayName(call: ToolCallBlock): string {
   return call.name || 'Tool';
@@ -24,19 +24,41 @@ export function defaultRenderCallArgs(call: ToolCallBlock, t: TFunction): any {
   return call.input || t('toolRender.noArgs');
 }
 
-export function defaultRenderResult(_call: ToolCallBlock, result: ToolResultBlock, t: TFunction): any {
-  const content = (result as any).content;
-  if (content && content.length > 0) {
-    const text = content
-      .map((c: any) => (c.type === 'text' ? c.text : ''))
-      .filter(Boolean)
-      .join('\n');
-    if (text) {
-      return h('pre', { class: 'text-xs overflow-auto max-h-48' }, text);
-    }
+export function defaultRenderResult(call: ToolCallBlock, result: ToolResultBlock, t: TFunction): any {
+  if (call.state === 'asking' || result.state === 'running') {
+    return h('span', { class: 'text-xs text-muted-foreground' }, `${t('common.running')} ...`);
   }
-  return h('span', { class: 'text-xs text-muted-foreground' },
-    result.state === 'success' ? t('toolRender.success') : t('toolRender.failed'));
+  if (result.state === 'interrupted') {
+    return h('span', { class: 'text-xs text-muted-foreground' }, t('common.interrupted'));
+  }
+
+  let resultStr: string;
+  if (typeof result.output === 'string') {
+    resultStr = result.output;
+  } else {
+    const parts = result.output.map((b) => {
+      if (b.type === 'text') return b.text;
+      const mainType = b.source.media_type.split('/')[0].toUpperCase();
+      const extIdx = b.source.media_type.lastIndexOf('/');
+      const ext = extIdx >= 0 ? b.source.media_type.slice(extIdx + 1) : 'bin';
+      return `[${mainType}.${ext}]`;
+    });
+    resultStr = parts.join('\n');
+  }
+
+  const maxLines = 7;
+  let lines = resultStr.split('\n');
+  if (lines.length > maxLines) {
+    const total = lines.length;
+    lines = lines.slice(0, maxLines);
+    lines.push(t('tool.moreLines', { count: total - maxLines }));
+  }
+
+  return h('div', { class: 'flex flex-col flex-1 min-w-0' },
+    lines.map((line, i) =>
+      h('div', { key: i, class: 'truncate text-xs' }, line),
+    ),
+  );
 }
 
 /** @internal used for type compatibility */
@@ -45,6 +67,59 @@ export function _noop() {}
 export function defaultRenderConfirmBody(call: ToolCallBlock): any {
   return h('code', { class: 'text-xs whitespace-pre-wrap break-all' }, call.input);
 }
+
+function processToolInput(input: string): string {
+  try {
+    const obj = JSON.parse(input);
+    return Object.entries(obj)
+      .map(([k, v]) => `${k}: "${v}"`)
+      .join('\n');
+  } catch {
+    return input;
+  }
+}
+
+/** Per-call collapsible wrapper matching React's Collapsible pattern. */
+const ToolCallItem = defineComponent({
+  name: 'ToolCallItem',
+  props: {
+    displayName: { type: String, required: true },
+    hasResult: Boolean,
+    state: String,
+  },
+  setup(props, { slots }) {
+    const open = ref(false);
+    return () => {
+      const argsVNode = slots.args?.();
+      const resultVNode = slots.default?.();
+      return h('div', { class: 'flex flex-col w-full max-w-full text-sm' }, [
+        h('button', {
+          class: 'group flex items-center gap-2 w-full text-left px-0 py-0.5 hover:bg-transparent active:translate-y-0',
+          onClick: () => { open.value = !open.value; },
+          type: 'button',
+        }, [
+          ToolStateIcon({ states: [(props.state ?? undefined) as any] }),
+          h('strong', { class: 'shrink-0 text-primary text-sm' }, props.displayName),
+          argsVNode
+            ? h('span', { class: 'truncate min-w-0 text-left text-muted-foreground text-sm' }, argsVNode)
+            : null,
+          props.hasResult
+            ? h(ChevronRight, {
+                class: 'size-3 shrink-0 ml-auto transition-transform duration-200',
+                style: open.value ? { transform: 'rotate(90deg)' } : {},
+              })
+            : null,
+        ]),
+        props.hasResult && open.value
+          ? h('div', { class: 'flex flex-row gap-x-2 pl-6 max-w-full mt-1' }, [
+              CornerLine({}),
+              h('div', { class: 'flex flex-col flex-1 min-w-0' }, resultVNode),
+            ])
+          : null,
+      ]);
+    };
+  },
+});
 
 export function defaultRenderGroup(
   calls: ToolCallWithResult[],
@@ -57,24 +132,22 @@ export function defaultRenderGroup(
 ): any {
   if (calls.length === 0) return null;
 
-  const hasResult = calls.some((item) => item.result);
-
-  return h('div', { class: 'flex flex-col w-full gap-1 text-sm' }, [
-    h('div', { class: 'flex flex-row gap-x-2 w-full max-w-full items-center' }, [
-      ToolStateIcon({ states: calls.map((item) => item.result?.state) }),
-      h(Wrench, { class: 'size-3.5 shrink-0' }),
-      h('span', { class: 'font-medium' }, resolvers.getDisplayName(calls[0].call)),
-    ]),
-    ...calls.map((item) =>
-      h('div', { key: item.call.id, class: 'flex flex-col w-full ml-6 border-l border-border pl-3' }, [
-        h('div', { class: 'flex flex-row gap-1 py-0.5' }, [
-          h('span', { class: 'text-muted-foreground shrink-0' }, '→'),
-          h('span', { class: 'truncate' }, resolvers.renderCallArgs(item.call)),
-        ]),
-        hasResult && item.result
-          ? h('div', { class: 'pl-4 mt-1' }, resolvers.renderResult(item.call, item.result))
-          : null,
-      ]),
-    ),
+  return h('div', { class: 'flex flex-col w-full' }, [
+    ...calls.map((item) => {
+      const resultContent = item.result
+        ? resolvers.renderResult(item.call, item.result)
+        : null;
+      const rawArgs = resolvers.renderCallArgs(item.call);
+      const argsText = typeof rawArgs === 'string' ? rawArgs : processToolInput(item.call.input);
+      return h(ToolCallItem, {
+        key: item.call.id,
+        displayName: resolvers.getDisplayName(item.call),
+        hasResult: !!resultContent,
+        state: item.result?.state,
+      }, {
+        default: () => resultContent,
+        args: () => argsText,
+      });
+    }),
   ]);
 }

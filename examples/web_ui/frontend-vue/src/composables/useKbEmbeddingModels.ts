@@ -1,4 +1,4 @@
-import { ref, readonly } from 'vue';
+import { ref, readonly, onMounted } from 'vue';
 import { knowledgeBaseApi } from '@/api';
 import type { ListKbEmbeddingModelsResponse, KbEmbeddingProvider, DimensionPolicy } from '@/api';
 
@@ -29,6 +29,10 @@ export function useKbEmbeddingModels() {
 			loading.value = false;
 		}
 	}
+
+	onMounted(() => {
+		refetch();
+	});
 
 	return {
 		providers: readonly(providers),
