@@ -9,8 +9,8 @@
           : 'w-full',
       ]"
     >
-      <template v-for="(block, i) in blocks" :key="i">
-        <div v-if="block.type === 'tool_call_group'" :class="blockPad">
+      <template v-for="(block, i) in blocks" :key="block.id ?? `block-${i}`">
+        <div v-if="block.type === 'tool_call_group'" v-memo="[block, block.id]" :class="blockPad">
           <ToolGroupRenderer :tool-name="block.toolName" :calls="block.calls" />
           <ConfirmCard
             v-if="block.askingCall"
@@ -21,7 +21,7 @@
             }"
           />
         </div>
-        <div v-else-if="block.type === 'text'" :class="['prose prose-sm w-full min-w-full', blockPad]">
+        <div v-else-if="block.type === 'text'" v-memo="[block.text]" :class="['prose prose-sm w-full min-w-full', blockPad]">
           <VueMarkdown :source="block.text" />
         </div>
         <div v-else-if="block.type === 'thinking'" :class="blockPad">
@@ -45,6 +45,13 @@
           >
             {{ block.thinking }}
           </div>
+        </div>
+        <div v-else-if="block.type === 'genui'" :class="blockPad">
+          <GenUIRenderer
+            v-memo="[block, block.generating]"
+            :block="block"
+            :is-generating="!!block.generating"
+          />
         </div>
         <img
           v-else-if="block.type === 'data' && dataTypeOf(block) === 'image'"
@@ -106,6 +113,7 @@ import { ElButton } from 'element-plus';
 import ConfirmCard from './ConfirmCard.vue';
 import FileAttachment from './FileAttachment.vue';
 import ToolGroupRenderer from './ToolGroupRenderer.vue';
+import GenUIRenderer from './GenUIRenderer.vue';
 import type { ToolCallWithResult } from './tool-renderers/types';
 import { useTranslation } from '@/i18n/useI18n';
 import { formatNumber, formatTime } from '@/utils/common';
@@ -118,7 +126,15 @@ interface ToolCallGroupBlock {
   askingCall: ToolCallBlock | null;
 }
 
-type ExtendedContentBlock = ContentBlock | ToolCallGroupBlock;
+interface GenUIBlock {
+  type: 'genui';
+  id?: string;
+  schema: string | object;
+  state?: Record<string, any>;
+  generating?: boolean;
+}
+
+type ExtendedContentBlock = ContentBlock | ToolCallGroupBlock | GenUIBlock;
 
 const props = defineProps<{
   message: Msg;
@@ -215,10 +231,47 @@ function toggleThinking(index: number) {
   expandedThinking[index] = !expandedThinking[index];
 }
 
-function groupToolCalls(content: ContentBlock[]): ExtendedContentBlock[] {
+function groupToolCalls(content: ContentBlock[], genuiCache?: Map<string, GenUIBlock>): ExtendedContentBlock[] {
   const callMap = new Map<string, ToolCallWithResult>();
   const resultMap = new Map<string, ContentBlock>();
   const ordering: Array<{ type: 'tool'; id: string } | { type: 'other'; block: ContentBlock }> = [];
+  
+  function extractGenUISchema(toolResult: any, callId?: string): GenUIBlock | null {
+    try {
+      const output = toolResult.output;
+      const text = Array.isArray(output)
+        ? output
+            .filter((b: any) => b.type === 'text')
+            .map((b: any) => b.text)
+            .join('')
+        : typeof output === 'string'
+          ? output
+          : '';
+      if (!text) return null;
+      const parsed = JSON.parse(text);
+      if (parsed.type === 'genui' && parsed.schema) {
+        const state = parsed.schema.state || parsed.state || {};
+        const cacheKey = callId || JSON.stringify(parsed.schema);
+        if (genuiCache?.has(cacheKey)) {
+          const cached = genuiCache.get(cacheKey)!;
+          cached.generating = toolResult.state === 'running';
+          return cached;
+        }
+        const block: GenUIBlock = {
+          type: 'genui',
+          id: callId || cacheKey,
+          schema: parsed.schema,
+          state,
+          generating: toolResult.state === 'running',
+        };
+        genuiCache?.set(cacheKey, block);
+        return block;
+      }
+    } catch {
+      // parse failure — likely partial JSON during streaming
+    }
+    return null;
+  }
 
   for (const block of content) {
     if (block.type === 'tool_call') {
@@ -242,10 +295,23 @@ function groupToolCalls(content: ContentBlock[]): ExtendedContentBlock[] {
 
   const flush = () => {
     if (currentGroup.length > 0 && currentToolName) {
+      if (currentToolName === 'generate_genui') {
+        const matched = currentGroup.find((item) => item.result);
+        if (matched?.result) {
+          const genuiBlock = extractGenUISchema(matched.result, matched.call.id);
+          if (genuiBlock) {
+            result.push(genuiBlock);
+            currentGroup = [];
+            currentToolName = null;
+            return;
+          }
+        }
+      }
       const firstAskIdx = currentGroup.findIndex((item) => item.call.state === 'asking');
+      const groupId = currentGroup.map((c) => c.call.id).join('-');
       result.push({
         type: 'tool_call_group',
-        id: crypto.randomUUID(),
+        id: `tcg-${currentToolName}-${groupId}`,
         toolName: currentToolName,
         calls: currentGroup,
         askingCall: firstAskIdx === -1 ? null : currentGroup[firstAskIdx].call,
@@ -273,13 +339,18 @@ function groupToolCalls(content: ContentBlock[]): ExtendedContentBlock[] {
 
   for (const [id, block] of resultMap) {
     if (block.type === 'tool_result') {
-      result.push({
-        type: 'tool_call_group',
-        id: crypto.randomUUID(),
-        toolName: block.name,
-        calls: [{ call: { type: 'tool_call', id, name: block.name, input: '', state: 'finished' } as any, result: block as any }],
-        askingCall: null,
-      });
+      const genuiBlock = extractGenUISchema(block, id);
+      if (genuiBlock) {
+        result.push(genuiBlock);
+      } else {
+        result.push({
+          type: 'tool_call_group',
+          id: `tcg-orphan-${id}`,
+          toolName: block.name,
+          calls: [{ call: { type: 'tool_call', id, name: block.name, input: '', state: 'finished' } as any, result: block as any }],
+          askingCall: null,
+        });
+      }
     }
   }
 
@@ -287,7 +358,9 @@ function groupToolCalls(content: ContentBlock[]): ExtendedContentBlock[] {
 }
 
 const content = computed(() => props.message.content || []);
-const blocks = computed(() => groupToolCalls(content.value));
+const genuiCache = new Map<string, GenUIBlock>();
+
+const blocks = computed(() => groupToolCalls(content.value, genuiCache));
 const hasBodyContent = computed(() =>
   blocks.value.some((b) => !(b.type === 'data' && (b as any).source?.media_type?.split('/')[0] === 'audio')),
 );

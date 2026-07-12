@@ -1,0 +1,147 @@
+/**
+ * GenUI 样式
+ * 用于美化 GenUI 渲染组件的样式
+ */
+
+/* GenUI 容器样式 */
+.genui-renderer-container {
+  width: 100%;
+  min-height: 100px;
+  border: 1px solid var(--border-color, #e4e7ed);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--bg-color, #ffffff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.genui-renderer-container:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* GenUI 加载状态样式 */
+.genui-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: genui-spin 1s linear infinite;
+}
+
+@keyframes genui-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* GenUI 空状态样式 */
+.genui-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: #999;
+  font-size: 14px;
+}
+
+.empty-text {
+  color: inherit;
+}
+
+/* GenUI 组件通用样式 */
+.genui-renderer-container .el-form {
+  margin-bottom: 0;
+}
+
+.genui-renderer-container .el-form-item {
+  margin-bottom: 16px;
+}
+
+.genui-renderer-container .el-button {
+  margin-top: 8px;
+}
+
+.genui-renderer-container .el-input {
+  width: 100%;
+}
+
+.genui-renderer-container .el-table {
+  margin-top: 16px;
+}
+
+/* GenUI 文本样式 */
+.genui-renderer-container .text {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+/* GenUI 表单样式 */
+.genui-renderer-container .form {
+  padding: 16px;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+/* GenUI 卡片样式 */
+.genui-renderer-container .card {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* GenUI 响应式样式 */
+@media (max-width: 768px) {
+  .genui-renderer-container {
+    padding: 12px;
+    border-radius: 6px;
+  }
+
+  .genui-renderer-container .el-form-item__label {
+    font-size: 13px;
+  }
+
+  .genui-renderer-container .el-input__inner {
+    font-size: 14px;
+  }
+}
+
+/* GenUI 暗色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .genui-renderer-container {
+    background: #1a1a1a;
+    border-color: #333;
+    color: #ffffff;
+  }
+
+  .genui-renderer-container .el-form {
+    background: #2a2a2a;
+  }
+
+  .genui-renderer-container .el-input__inner {
+    background: #333;
+    border-color: #444;
+    color: #ffffff;
+  }
+
+  .genui-renderer-container .el-button--primary {
+    background: #409eff;
+    border-color: #409eff;
+  }
+}

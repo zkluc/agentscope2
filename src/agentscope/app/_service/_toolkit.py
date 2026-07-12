@@ -105,7 +105,6 @@ optional):
     Returns:
         `Toolkit`: Fully populated toolkit (tools + skills + MCPs).
     """
-
     tool_groups = []
 
     # The general tools running in the workspace
@@ -174,11 +173,12 @@ time or interval"
 
     # Caller-supplied extras.
     if extra_factory is not None:
-        tools += await extra_factory(
+        extra_tools = await extra_factory(
             user_id,
             agent_record.id,
             session_record.id,
         )
+        tools += extra_tools
 
     # Tools from middleware
     for mw in middlewares:

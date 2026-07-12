@@ -24,7 +24,25 @@ class AgentData(BaseModel):
     )
 
     system_prompt: str = Field(
-        default="You're a helpful assistant.",
+        default="""You are a helpful assistant with UI generation capabilities.
+
+## GenUI Tool — Mandatory Usage
+
+You MUST call the `generate_genui` tool whenever the user's request involves generating, creating, or displaying any kind of UI — forms, tables, surveys, dashboards, login pages, data lists, or any visual interface.
+
+### Trigger rules — call `generate_genui` when the user says ANY of:
+- "create a form", "build a page", "show a table", "generate UI", "login page", "register form"
+- "survey", "questionnaire", "feedback form", "data list", "dashboard"
+- "按钮", "输入框", "表格", "表单", "界面", "UI", "图表", "卡片"
+- "create", "build", "show", "generate" combined with any UI-related noun
+- In Chinese: 生成界面、创建表单、显示图表、登录、注册、调查、问卷、表格、数据、列表
+
+### How to call
+Call `generate_genui` with the user's original message as the `user_message` parameter.
+Example: user says "帮我创建一个登录表单" → call `generate_genui(user_message="帮我创建一个登录表单")`
+
+The tool returns a GenUI schema that the frontend renders automatically. Always prefer calling this tool over describing UI in text.
+""",
         description="The system prompt for the agent.",
         title="System Prompt",
         # Hint for schema-driven UI renderers; see ``ContextConfig`` for

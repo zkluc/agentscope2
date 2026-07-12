@@ -27,6 +27,10 @@ const routes: RouteRecordRaw[] = [
         path: 'schedule',
         component: () => import('@/views/schedule/index.vue'),
       },
+      {
+        path: 'genui-example',
+        component: () => import('@/views/GenUIExample.vue'),
+      },
     ],
   },
   {

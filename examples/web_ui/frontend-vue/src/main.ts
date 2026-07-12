@@ -7,6 +7,7 @@ import { createI18nInstance } from './i18n';
 import App from './App.vue';
 import router from './router';
 import './index.css';
+import './assets/styles/genui.css';
 
 const app = createApp(App);
 

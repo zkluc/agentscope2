@@ -13,6 +13,7 @@
   "dependencies": {
     "@agentscope-ai/agentscope": "^0.0.12",
     "@fontsource-variable/geist": "^5.2.9",
+    "@opentiny/genui-sdk-vue": "^1.2.1",
     "@vueuse/core": "^12.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

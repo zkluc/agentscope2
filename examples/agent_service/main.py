@@ -11,32 +11,52 @@ from agentscope.app.message_bus import InMemoryMessageBus
 from agentscope.app.rag.knowledge_base_manager import CollectionPerKbManager
 from agentscope.app.storage import RedisStorage
 from agentscope.app.workspace_manager import LocalWorkspaceManager
-from agentscope.mcp import MCPClient, StdioMCPConfig, HttpMCPConfig
+# 如果需要 MCP 工具，取消注释以下导入
+# from agentscope.mcp import MCPClient, StdioMCPConfig, HttpMCPConfig
 from agentscope.permission import PermissionContext, PermissionMode
 from agentscope.rag import QdrantStore
+from agentscope.tool import ToolBase
 
-default_mcps = [
-    MCPClient(
-        name="browser-use",
-        mcp_config=StdioMCPConfig(
-            command="npx",
-            args=["@playwright/mcp@latest"],
-        ),
-        is_stateful=True,
-    ),
-]
+# 导入 GenUI 工具
+from genui_tool import genui_tool
 
-if os.getenv("AMAP_API_KEY"):
-    default_mcps.append(
-        MCPClient(
-            name="amap",
-            mcp_config=HttpMCPConfig(
-                url=f"https://mcp.amap.com/mcp?key="
-                f"{os.environ['AMAP_API_KEY']}",
-            ),
-            is_stateful=False,
-        ),
-    )
+
+# GenUI 工具工厂函数
+async def genui_tool_factory(
+    user_id: str,
+    agent_id: str,
+    session_id: str,
+) -> list[ToolBase]:
+    """为每个 agent 添加 GenUI 工具"""
+    return [genui_tool]
+
+# MCP 工具配置（按需启用）
+default_mcps = []
+
+# 如果需要 browser-use MCP，取消注释以下配置
+# default_mcps.append(
+#     MCPClient(
+#         name="browser-use",
+#         mcp_config=StdioMCPConfig(
+#             command="npx",
+#             args=["@playwright/mcp@latest"],
+#         ),
+#         is_stateful=True,
+#     ),
+# )
+
+# 如果需要高德地图 MCP，设置 AMAP_API_KEY 环境变量后取消注释
+# if os.getenv("AMAP_API_KEY"):
+#     default_mcps.append(
+#         MCPClient(
+#             name="amap",
+#             mcp_config=HttpMCPConfig(
+#                 url=f"https://mcp.amap.com/mcp?key="
+#                 f"{os.environ['AMAP_API_KEY']}",
+#             ),
+#             is_stateful=False,
+#         ),
+#     )
 
 storage = RedisStorage(
     host="localhost",
@@ -118,8 +138,8 @@ so anything you want them to see MUST be sent through `TeamSay`.""",
             allow_headers=["*"],
         ),
     ],
+    extra_agent_tools=genui_tool_factory,
 )
-
 
 if __name__ == "__main__":
     # Start the service
