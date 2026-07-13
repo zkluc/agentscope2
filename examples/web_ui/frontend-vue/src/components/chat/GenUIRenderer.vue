@@ -44,13 +44,13 @@ const props = defineProps({
   isGenerating: Boolean,
 });
 
-function isJSExpression(obj: any): boolean {
+function isJSExpression(obj) {
   return obj && typeof obj === 'object' && obj.type === 'JSExpression' && typeof obj.value === 'string';
 }
 
-const sanitizeCache = new Map<any, any>();
+const sanitizeCache = new Map();
 
-function sanitizeNode(node: any): any {
+function sanitizeNode(node) {
   if (!node || typeof node !== 'object') return node;
   if (sanitizeCache.has(node)) return sanitizeCache.get(node);
   if (Array.isArray(node)) {
@@ -59,10 +59,10 @@ function sanitizeNode(node: any): any {
     return result;
   }
 
-  const result: any = { ...node };
+  const result = { ...node };
 
   if (result.props) {
-    const props: Record<string, any> = {};
+    const props = {};
     for (const [key, val] of Object.entries(result.props)) {
       if (isJSExpression(val)) continue;
       props[key] = val;
@@ -102,7 +102,7 @@ const rendererState = computed(() => {
   }
   // 否则从 schema 内部提取
   if (props.block?.schema && typeof props.block.schema === 'object') {
-    return (props.block.schema as any).state || {};
+    return props.block.schema.state || {};
   }
   return {};
 });
@@ -111,12 +111,12 @@ const customComponents = genuiCustomComponents;
 
 const customActions = {
   openPage: {
-    execute: (params: any, _context: any) => {
+    execute: (params, _context) => {
       window.open(params.url, params.target || '_self');
     },
   },
   showNotification: {
-    execute: (params: any) => {
+    execute: (params) => {
       console.log('Notification:', params.message);
     },
   },

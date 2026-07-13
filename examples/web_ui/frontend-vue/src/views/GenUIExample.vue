@@ -49,7 +49,7 @@
 <script setup lang="ts">
 import GenUIRenderer from '@/components/chat/GenUIRenderer.vue';
 import GenUITest from '@/components/chat/GenUITest.vue';
-import { GenUIContentBlock, GenUISchema } from '@/utils/genui';
+import type { GenUIContentBlock, GenUISchema } from '@/utils/genui';
 import { computed, ref } from 'vue';
 
 const userInput = ref('');
@@ -274,6 +274,8 @@ async function generateUI() {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .example-title {
