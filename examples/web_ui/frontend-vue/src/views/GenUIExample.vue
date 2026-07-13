@@ -47,10 +47,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import GenUIRenderer from '@/components/chat/GenUIRenderer.vue';
 import GenUITest from '@/components/chat/GenUITest.vue';
-import type { GenUIContentBlock, GenUISchema } from '@/utils/genui';
+import { GenUIContentBlock, GenUISchema } from '@/utils/genui';
+import { computed, ref } from 'vue';
 
 const userInput = ref('');
 const isGenerating = ref(false);

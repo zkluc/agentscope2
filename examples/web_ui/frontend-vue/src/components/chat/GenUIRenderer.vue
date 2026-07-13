@@ -34,22 +34,15 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { GenuiConfigProvider, GenuiRenderer } from '@opentiny/genui-sdk-vue';
 import { computed } from 'vue';
 import { genuiCustomComponents } from './GenUICustomComponents';
 
-interface GenUIBlock {
-  type: 'genui';
-  id?: string;
-  schema: string | object;
-  state?: Record<string, any>;
-}
-
-const props = defineProps<{
-  block: GenUIBlock;
-  isGenerating?: boolean;
-}>();
+const props = defineProps({
+  block: Object,
+  isGenerating: Boolean,
+});
 
 function isJSExpression(obj: any): boolean {
   return obj && typeof obj === 'object' && obj.type === 'JSExpression' && typeof obj.value === 'string';
